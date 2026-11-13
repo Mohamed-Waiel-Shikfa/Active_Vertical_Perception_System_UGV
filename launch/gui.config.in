@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<window>
+  <width>1440</width>
+  <height>960</height>
+  <menus><plugins visible="true"/></menus>
+</window>
+<plugin filename="MinimalScene" name="3D View">
+  <gz-gui><title>Greenhouse</title><property key="state" type="string">docked</property></gz-gui>
+  <engine>ogre2</engine>
+  <scene>scene</scene>
+  <ambient_light>0.65 0.65 0.65</ambient_light>
+  <background_color>0.73 0.83 0.88</background_color>
+  <camera_pose>-11 -9 8 0 0.50 0.64</camera_pose>
+</plugin>
+<plugin filename="GzSceneManager" name="Scene Manager">
+  <gz-gui><property key="state" type="string">floating</property><property key="visible" type="bool">false</property><property key="showTitleBar" type="bool">false</property><property key="width" type="double">0</property><property key="height" type="double">0</property></gz-gui>
+</plugin>
+<plugin filename="InteractiveViewControl" name="View control">
+  <gz-gui><property key="state" type="string">floating</property><property key="visible" type="bool">false</property><property key="showTitleBar" type="bool">false</property><property key="width" type="double">0</property><property key="height" type="double">0</property></gz-gui>
+</plugin>
+<plugin filename="CameraTracking" name="Camera tracking">
+  <gz-gui><property key="state" type="string">floating</property><property key="visible" type="bool">false</property><property key="showTitleBar" type="bool">false</property><property key="width" type="double">0</property><property key="height" type="double">0</property></gz-gui>
+</plugin>
+<plugin filename="EntityContextMenuPlugin" name="Entity menu">
+  <gz-gui><property key="state" type="string">floating</property><property key="visible" type="bool">false</property><property key="showTitleBar" type="bool">false</property><property key="width" type="double">0</property><property key="height" type="double">0</property></gz-gui>
+</plugin>
+<plugin filename="JackalControls" name="Drive and parameters">
+  <gz-gui>
+    <property key="state" type="string">docked</property>
+    <property key="width" type="double">330</property>
+    <property key="height" type="double">850</property>
+  </gz-gui>
+  <drive_topic>@CMD_VEL@</drive_topic>
+  <prefix>@PREFIX@</prefix>
+  <ground_rms_mm>@GROUND_RMS@</ground_rms_mm>
+  <test_output>@TEST_OUTPUT@</test_output>
+  <test_phase>@TEST_PHASE@</test_phase>
+</plugin>

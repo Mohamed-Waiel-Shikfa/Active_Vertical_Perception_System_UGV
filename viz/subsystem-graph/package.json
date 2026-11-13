@@ -1,0 +1,21 @@
+{
+  "name": "subsystem-graph",
+  "displayName": "Greenhouse",
+  "description": "ROS graph of one robot subsystem at a time, with routed edges and live rates. Reads /greenhouse/viz/graph (tools/ros_graph.py).",
+  "publisher": "greenhouse",
+  "version": "0.1.0",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --format=cjs --platform=browser --target=es2022 --minify --outfile=dist/extension.js",
+    "test": "node --test src/graph.test.js"
+  },
+  "dependencies": {
+    "elkjs": "0.12.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

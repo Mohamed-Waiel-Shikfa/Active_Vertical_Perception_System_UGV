@@ -1,0 +1,17 @@
+# Clearpath platform parameters this simulation changes, in the robot.yaml
+# platform.extras.ros_parameters format. tools/prepare_platform.py applies them to the
+# generated SETUP_DIR/platform/config/*.yaml at every start; a key that robot.yaml sets
+# under platform.extras.ros_parameters keeps the user's value.
+platform_velocity_controller:
+  # Clearpath's J100 controller file ramps at 2 m/s^2 and 4 rad/s^2, so a key press took
+  # 0.5-1 s to reach or leave the panel's 2 m/s / 4 rad/s. Measured at real time
+  # (2026-10-23): first motion 46-106 ms and stops 44-470 ms with these values, against
+  # 82-414 ms and 186-620 ms before. Clearpath's own robot.yaml schema defaults are 20 / 25.
+  linear.x.max_acceleration: 10.0
+  linear.x.max_deceleration: -10.0
+  linear.x.max_acceleration_reverse: -10.0
+  linear.x.max_deceleration_reverse: 10.0
+  angular.z.max_acceleration: 20.0
+  angular.z.max_deceleration: -20.0
+  angular.z.max_acceleration_reverse: -20.0
+  angular.z.max_deceleration_reverse: 20.0

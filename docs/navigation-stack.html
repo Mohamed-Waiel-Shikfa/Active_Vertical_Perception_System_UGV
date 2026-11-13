@@ -1,0 +1,597 @@
+<title>Greenhouse Jackal Navigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one reading column (~70ch) with a sticky contents rail on wide screens; figures may run wider than the text. */
+:root{
+  --bg:#f5f6f1; --surface:#ffffff; --ink:#17231b; --muted:#56645a; --rule:#d5dbd2;
+  --leaf:#2b7a4b; --leaf-soft:#dcebe0; --amber:#b5651d; --amber-soft:#f3e2d2; --plant:#5f8f52; --plant-soft:#cfe0c6;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1511; --surface:#161e18; --ink:#e2e9e3; --muted:#9aa89e; --rule:#2c372f;
+  --leaf:#6cc08f; --leaf-soft:#1d3326; --amber:#e8995a; --amber-soft:#3a2818; --plant:#87b67a; --plant-soft:#22331f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1511; --surface:#161e18; --ink:#e2e9e3; --muted:#9aa89e; --rule:#2c372f;
+  --leaf:#6cc08f; --leaf-soft:#1d3326; --amber:#e8995a; --amber-soft:#3a2818; --plant:#87b67a; --plant-soft:#22331f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:40px 80px;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:13px}
+nav.toc b{display:block;font:600 12px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:6px;counter-reset:s}
+nav.toc a{color:var(--muted);text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--leaf)}
+main{min-width:0}
+main>section{max-width:72ch}
+main>section.wide{max-width:none}
+h1{font:600 clamp(32px,5vw,46px)/1.05 var(--f-display);letter-spacing:-.01em;margin:0 0 12px;text-wrap:balance}
+h2{font:600 26px/1.2 var(--f-display);margin:64px 0 12px;text-wrap:balance;scroll-margin-top:24px}
+h3{font:600 18px/1.3 var(--f-display);margin:28px 0 8px;letter-spacing:.01em}
+p{margin:0 0 14px}
+.lede{font-size:19px;color:var(--muted);max-width:62ch}
+.meta{font:13px/1.5 var(--f-mono);color:var(--muted);margin-bottom:28px}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+code{background:var(--leaf-soft);padding:1px 5px;border-radius:3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:28px 0 8px;max-width:none}
+.stat{border-top:2px solid var(--leaf);padding:12px 0 0}
+.stat .k{font:600 30px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat .k small{font-size:15px;color:var(--muted);font-weight:500}
+.stat .d{font-size:13px;color:var(--muted);margin-top:6px}
+figure{margin:24px 0 28px;max-width:none}
+figure .fig{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:16px;overflow-x:auto}
+figure svg{display:block;width:100%;height:auto;min-width:640px}
+figcaption{font-size:13px;color:var(--muted);margin-top:8px;max-width:80ch}
+figcaption b{color:var(--ink);font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto;margin:12px 0 20px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 12px/1.3 var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.n{text-align:right;white-space:nowrap}
+td .mono{white-space:nowrap}
+.good{color:var(--leaf);font-weight:600}.bad{color:var(--amber);font-weight:600}
+ol.steps{padding-left:22px;margin:0 0 16px}
+ol.steps li{margin-bottom:8px}
+.note{border-left:3px solid var(--amber);background:var(--amber-soft);padding:10px 14px;border-radius:0 4px 4px 0;margin:16px 0;font-size:15px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+/* SVG palette, all from tokens */
+.s-box{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
+.s-nav{fill:var(--leaf-soft);stroke:var(--leaf);stroke-width:1.4}
+.s-gw{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.6}
+.s-t{fill:var(--ink);font:500 13px var(--f-body)}
+.s-ts{fill:var(--muted);font:12px var(--f-body)}
+.s-tm{fill:var(--muted);font:11px var(--f-mono)}
+.s-h{fill:var(--ink);font:600 14px var(--f-display)}
+.s-ar{stroke:var(--ink);stroke-width:1.3;fill:none}
+.s-fb{stroke:var(--leaf);stroke-width:1.3;fill:none;stroke-dasharray:5 4}
+.s-plant{fill:var(--plant-soft);stroke:var(--plant);stroke-width:1}
+.s-infl{fill:var(--leaf);opacity:.12}
+.s-grid{stroke:var(--rule);stroke-width:1}
+.s-old{stroke:var(--amber);stroke-width:2.4;fill:none}
+.s-new{stroke:var(--leaf);stroke-width:2.4;fill:none}
+.s-short{stroke:var(--muted);stroke-width:1.4;fill:none;stroke-dasharray:3 3}
+.s-robot{fill:none;stroke:var(--ink);stroke-width:1.4}
+.s-dim{stroke:var(--muted);stroke-width:1;fill:none}
+.s-bar-old{fill:var(--amber)}.s-bar-new{fill:var(--leaf)}
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr);gap:0}nav.toc{position:static;margin-bottom:24px}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <b>Contents</b>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#map">Map and footprint</a></li>
+    <li><a href="#planner">Global planner</a></li>
+    <li><a href="#controller">Path follower</a></li>
+    <li><a href="#gateway">Command shaping</a></li>
+    <li><a href="#physics">Measured base behaviour</a></li>
+    <li><a href="#lifecycle">Goal lifecycle and safety</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#limits">Limits and open questions</a></li>
+    <li><a href="#params">Parameter reference</a></li>
+  </ol>
+</nav>
+
+<main>
+<section id="overview">
+  <h1>Greenhouse Jackal Navigation</h1>
+  <p class="lede">How the simulated Clearpath Jackal plans and drives to an operator-chosen pose in the greenhouse: a Nav2 Jazzy planner and path follower, wrapped by a gateway that adapts their commands to how a skid-steer base moves on soil.</p>
+  <p class="meta">jackal-greenhouse-sim · Nav2 Jazzy 1.3.13 · Gazebo Harmonic · state as of October 2026</p>
+  <p>The operator enters a goal pose (X, Y in metres, yaw in degrees, greenhouse frame) and presses <b>Go</b>. The robot plans a collision-free route through the aisles and headlands, turns towards it, drives at the panel's <b>Drive</b> speed on straights, slows for row-end hairpins, and finishes with a docking move that puts it on the goal pose. Everything runs closed-loop on the simulator's measured pose and velocity.</p>
+</section>
+
+<section class="wide">
+  <div class="stats" id="stats">
+    <div class="stat"><div class="k">1.9<small> m/s</small></div><div class="d">peak speed on a 13 m aisle at Drive 2.0 (previously capped at 0.22)</div></div>
+    <div class="stat"><div class="k">1.02<small>×</small></div><div class="d">mean planned length over the true shortest safe path, 14 start/goal pairs (previously 1.18×, worst 1.68×)</div></div>
+    <div class="stat"><div class="k">7/7</div><div class="d">goals in the final test loop reached within 7.1 cm and 3.3°, including two reverse docks</div></div>
+    <div class="stat"><div class="k">3/3</div><div class="d">acceptance phases pass: obstacle, safety stop, terrain update</div></div>
+  </div>
+</section>
+
+<section id="architecture" class="wide">
+  <h2>Architecture</h2>
+  <div style="max-width:72ch">
+  <p>Three layers sit between the operator and the wheels. Nav2 decides <i>where</i> to go (planner) and <i>how to steer</i> along the route (path follower). The navigation gateway owns the goal lifecycle and turns Nav2's commands into ones this base can execute. The stock Clearpath control stack (twist_mux, diff_drive_controller) and the Gazebo physics are unchanged.</p>
+  </div>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 1000 560" role="img" aria-labelledby="archT">
+      <title id="archT">Data flow from the operator panel through the gateway and Nav2 to Gazebo and back</title>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink)"/></marker>
+        <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--leaf)"/></marker>
+      </defs>
+      <!-- column headers -->
+      <text class="s-ts" x="20" y="24">OPERATOR</text>
+      <text class="s-ts" x="250" y="24">GATEWAY  (tools/navigation_gateway.py)</text>
+      <text class="s-ts" x="640" y="24">NAV2 JAZZY  (namespace …/navigation)</text>
+      <!-- operator -->
+      <rect class="s-box" x="20" y="44" width="190" height="88" rx="6"/>
+      <text class="s-h" x="34" y="68">Panel: Navigate</text>
+      <text class="s-ts" x="34" y="88">X, Y (m), yaw (deg)</text>
+      <text class="s-ts" x="34" y="106">Drive (m/s), Turn (rad/s)</text>
+      <text class="s-ts" x="34" y="124">Go · Cancel</text>
+      <rect class="s-box" x="20" y="166" width="190" height="52" rx="6"/>
+      <text class="s-t" x="34" y="188">nav_command.py</text>
+      <text class="s-tm" x="34" y="206">go --x --y --yaw --speed --turn</text>
+      <line class="s-ar" x1="115" y1="132" x2="115" y2="164" marker-end="url(#ah)"/>
+      <rect class="s-box" x="20" y="252" width="190" height="52" rx="6"/>
+      <text class="s-t" x="34" y="274">Arrow keys / Stop</text>
+      <text class="s-ts" x="34" y="292">manual override cancels goal</text>
+      <!-- gateway -->
+      <rect class="s-gw" x="250" y="44" width="330" height="360" rx="8"/>
+      <text class="s-h" x="266" y="70">Navigation gateway</text>
+      <text class="s-ts" x="266" y="90">HTTP 127.0.0.1:8765 (go, cancel, status)</text>
+      <rect class="s-box" x="266" y="104" width="298" height="60" rx="4"/>
+      <text class="s-t" x="278" y="124">Goal lifecycle</text>
+      <text class="s-ts" x="278" y="142">validate goal + start, set per-goal limits,</text>
+      <text class="s-ts" x="278" y="157">dock, verify final pose, report status</text>
+      <rect class="s-box" x="266" y="176" width="298" height="74" rx="4"/>
+      <text class="s-t" x="278" y="196">Command shaping (20 Hz)</text>
+      <text class="s-ts" x="278" y="214">curve + goal speed profile, traction limit,</text>
+      <text class="s-ts" x="278" y="229">yaw-gain inversion + rate feedback,</text>
+      <text class="s-ts" x="278" y="244">clamp to panel Turn rate</text>
+      <rect class="s-box" x="266" y="262" width="298" height="60" rx="4"/>
+      <text class="s-t" x="278" y="282">Native feedback</text>
+      <text class="s-ts" x="278" y="300">pose/velocity → /greenhouse/nav/odom,</text>
+      <text class="s-ts" x="278" y="315">TF nav_odom → nav_base, freshness watchdog</text>
+      <rect class="s-box" x="266" y="334" width="298" height="56" rx="4"/>
+      <text class="s-t" x="278" y="354">Collision map + revisions</text>
+      <text class="s-ts" x="278" y="372">reload after a terrain/contact Apply</text>
+      <line class="s-ar" x1="210" y1="192" x2="248" y2="134" marker-end="url(#ah)"/>
+      <line class="s-ar" x1="210" y1="278" x2="248" y2="278" marker-end="url(#ah)"/>
+      <!-- nav2 -->
+      <rect class="s-nav" x="640" y="44" width="340" height="68" rx="6"/>
+      <text class="s-h" x="654" y="68">bt_navigator</text>
+      <text class="s-ts" x="654" y="88">NavigateToPose: plan once (again only if invalid),</text>
+      <text class="s-ts" x="654" y="104">no recovery behaviours</text>
+      <rect class="s-nav" x="640" y="130" width="160" height="96" rx="6"/>
+      <text class="s-h" x="652" y="154">planner_server</text>
+      <text class="s-ts" x="652" y="174">Smac 2D A*</text>
+      <text class="s-ts" x="652" y="190">global costmap</text>
+      <text class="s-ts" x="652" y="206">(static + inflation)</text>
+      <rect class="s-nav" x="820" y="130" width="160" height="96" rx="6"/>
+      <text class="s-h" x="832" y="154">controller_server</text>
+      <text class="s-ts" x="832" y="174">Regulated Pure</text>
+      <text class="s-ts" x="832" y="190">Pursuit, 20 Hz</text>
+      <text class="s-ts" x="832" y="206">local costmap 8×8 m</text>
+      <rect class="s-nav" x="640" y="244" width="340" height="44" rx="6"/>
+      <text class="s-h" x="654" y="271">map_server</text>
+      <text class="s-ts" x="760" y="271">0.05 m map from SDF colliders</text>
+      <line class="s-ar" x1="580" y1="120" x2="638" y2="80" marker-end="url(#ah)"/>
+      <text class="s-tm" x="586" y="92">goal</text>
+      <line class="s-ar" x1="720" y1="112" x2="720" y2="128" marker-end="url(#ah)"/>
+      <line class="s-ar" x1="900" y1="112" x2="900" y2="128" marker-end="url(#ah)"/>
+      <path class="s-ar" d="M800 178 H818" marker-end="url(#ah)"/>
+      <text class="s-tm" x="802" y="172">path</text>
+      <path class="s-ar" d="M900 226 C900 320 640 220 582 212" marker-end="url(#ah)"/>
+      <text class="s-tm" x="700" y="320">cmd_vel (v, ω wanted)</text>
+      <!-- base -->
+      <rect class="s-box" x="250" y="448" width="230" height="84" rx="6"/>
+      <text class="s-h" x="264" y="472">twist_mux</text>
+      <text class="s-ts" x="264" y="492">navigation priority 1,</text>
+      <text class="s-ts" x="264" y="508">manual 2, joystick 10,</text>
+      <text class="s-ts" x="264" y="524">safety locks 253 to 255</text>
+      <rect class="s-box" x="520" y="448" width="190" height="84" rx="6"/>
+      <text class="s-h" x="534" y="472">diff_drive_controller</text>
+      <text class="s-ts" x="534" y="492">≤ 2.0 m/s, ≤ 4.0 rad/s,</text>
+      <text class="s-ts" x="534" y="508">10 m/s², 20 rad/s² ramps</text>
+      <text class="s-ts" x="534" y="524">(J100, sim override)</text>
+      <rect class="s-box" x="750" y="448" width="230" height="84" rx="6"/>
+      <text class="s-h" x="764" y="472">Gazebo physics</text>
+      <text class="s-ts" x="764" y="492">heightfield soil, WheelSlip,</text>
+      <text class="s-ts" x="764" y="508">4 skid-steer wheels</text>
+      <text class="s-ts" x="764" y="524">PostUpdate pose @ 50 Hz sim</text>
+      <line class="s-ar" x1="365" y1="404" x2="365" y2="446" marker-end="url(#ah)"/>
+      <text class="s-tm" x="372" y="430">greenhouse/nav_cmd</text>
+      <line class="s-ar" x1="115" y1="304" x2="115" y2="490"/>
+      <line class="s-ar" x1="115" y1="490" x2="248" y2="490" marker-end="url(#ah)"/>
+      <text class="s-tm" x="124" y="482">cmd_vel</text>
+      <line class="s-ar" x1="480" y1="490" x2="518" y2="490" marker-end="url(#ah)"/>
+      <line class="s-ar" x1="710" y1="490" x2="748" y2="490" marker-end="url(#ah)"/>
+      <path class="s-fb" d="M865 448 V420 H600 V300 H582" marker-end="url(#ahg)"/>
+      <text class="s-tm" x="640" y="414" style="fill:var(--leaf)">/greenhouse/physics (measured pose, velocity)</text>
+      <path class="s-fb" d="M582 300 C610 300 610 360 640 360 H980" />
+      <text class="s-tm" x="660" y="352" style="fill:var(--leaf)">odom + TF to Nav2</text>
+    </svg>
+    </div>
+    <figcaption><b>Figure 1.</b> Solid arrows carry goals and commands; dashed green arrows carry the simulator's measured state. Navigation feedback is the physical base_link pose from Gazebo, not wheel odometry, so Nav2 sees where the robot really is even when wheels slip.</figcaption>
+  </figure>
+  <div style="max-width:72ch">
+  <h3>Why a gateway at all</h3>
+  <p>Nav2's planners and controllers assume a robot that does what it is told: command 1 rad/s, get 1 rad/s. This base does not. On the greenhouse soil a skid-steer turn in place reaches about 28% of the commanded yaw rate, responds about half a second late, and slides sideways while it spins (section <a href="#physics">Measured base behaviour</a>). The gateway is the single place where those facts live. Nav2 plans and steers in terms of the motion it wants; the gateway converts that into the command the base needs. It is also the only component allowed to publish navigation velocity, so every stop condition is enforced in one place.</p>
+  </div>
+</section>
+
+<section id="map">
+  <h2>Map and footprint</h2>
+  <p>The occupancy map is generated at startup from the greenhouse's actual SDF collision geometry (plants, walls, door frame) at 0.05 m resolution, plus terrain too steep to support the robot (over 12°). Nothing is drawn from rendered images and there is no lidar or SLAM. Roof structure above the robot's full height (1.913 m, lift at full stroke) is excluded.</p>
+  <p>The footprint is measured from the robot's expanded URDF, including the lift through its whole stroke and the gimbals through their whole range: 0.558 × 0.480 m with a 25 mm margin, circumscribed radius 0.368 m. The path follower's collision check adds 0.020 m of padding, derived below, which gives a 0.396 m planning radius.</p>
+</section>
+<section class="wide">
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 900 360" role="img" aria-labelledby="aisleT">
+      <title id="aisleT">Top view of one aisle drawn to scale, showing plant rows, the robot footprint, planning radius and inflation</title>
+      <!-- scale: 1 m = 150 px; aisle centre at y=180; rows at ±1 m => y=30 and y=330 -->
+      <g id="plants"></g>
+      <!-- inflation bands drawn by script -->
+      <g id="infl"></g>
+      <line class="s-grid" x1="20" y1="180" x2="880" y2="180" stroke-dasharray="4 6"/>
+      <text class="s-tm" x="26" y="174">aisle centre</text>
+      <!-- robot at x=450, centre y=180: 0.558 m long = 83.7 px, 0.48 m wide = 72 px -->
+      <rect class="s-robot" x="408.15" y="144" width="83.7" height="72" rx="3"/>
+      <rect class="s-robot" x="405.15" y="141" width="89.7" height="78" rx="3" stroke-dasharray="3 3" opacity=".7"/>
+      <circle class="s-dim" cx="450" cy="180" r="55.2"/>
+      <circle class="s-dim" cx="450" cy="180" r="59.4" stroke-dasharray="6 4"/>
+      <path class="s-ar" d="M446 180 H458 M450 176 V184"/>
+      <!-- dimension: clear aisle 1.3 m between plant edges y=180±97.5 -->
+      <line class="s-dim" x1="700" y1="82.5" x2="700" y2="277.5"/>
+      <line class="s-dim" x1="692" y1="82.5" x2="708" y2="82.5"/><line class="s-dim" x1="692" y1="277.5" x2="708" y2="277.5"/>
+      <text class="s-tm" x="712" y="184">1.30 m clear</text>
+      <line class="s-dim" x1="520" y1="180" x2="520" y2="82.5"/>
+      <text class="s-tm" x="526" y="140">0.65 m</text>
+      <text class="s-tm" x="300" y="126">footprint 0.558 × 0.480 m</text>
+      <text class="s-tm" x="300" y="250">circumscribed r 0.368 m</text>
+      <text class="s-tm" x="300" y="266">planning r 0.396 m (dashed)</text>
+      <!-- scale bar -->
+      <line class="s-ar" x1="740" y1="345" x2="890" y2="345"/><line class="s-ar" x1="740" y1="340" x2="740" y2="350"/><line class="s-ar" x1="890" y1="340" x2="890" y2="350"/>
+      <text class="s-tm" x="800" y="338">1 m</text>
+    </svg>
+    </div>
+    <div class="legend"><span><i style="background:var(--plant-soft);border:1px solid var(--plant)"></i>plant collision (radius 0.35 m, 0.75 m spacing)</span><span><i style="background:var(--leaf);opacity:.25"></i>global inflation band (0.6 m)</span></div>
+    <figcaption><b>Figure 2.</b> One aisle drawn to scale. Rows are 2.0 m apart, leaving 1.30 m clear. The robot's centre must stay at least 0.396 m from a plant, so only a 0.51 m wide strip down the middle of each aisle is plannable. Turning in place needs the full circumscribed circle, which leaves 0.25 m of lateral slack on the plan (0.20 m measured against the map's cells, which is what a 4 to 24 cm spin slide has to fit in). The two 0.6 m inflation bands stop 0.1 m apart, so the centre line itself costs nothing.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h3>Where the 0.020 m padding comes from</h3>
+  <p>Regulated Pure Pursuit checks for collisions by stepping the commanded motion forward one local-costmap cell (0.025 m, half the map's 0.05 m) at a time (for a turn in place, one cell of sweep at the circumscribed radius). Between two checks a footprint corner can move further than the centre when the robot is also turning. Below the in-place-turn threshold, pure-pursuit curvature is at most 2 sin(0.5) / 0.6 m = 1.598 m⁻¹ (0.6 m is the shortest lookahead), so a corner moves at most 0.025 × (1 + 0.368 × 1.598) = 0.040 m per step. Half of that, rounded up, is the padding that keeps the nearest checked footprint within reach of any point the body passes through. The bound is for the commanded motion, not a guarantee against wheel slip. The local costmap used to be 0.05 m, and with the 1.0 m lookahead that needed 0.034 m; shortening the lookahead to 0.6 m would have needed 0.040 m and cost 8 mm of the slack an in-place spin needs in an aisle, so the cell size was halved instead.</p>
+</section>
+
+<section id="planner" class="wide">
+  <h2>Global planner</h2>
+  <div style="max-width:72ch">
+  <p><b>Smac Planner 2D</b> runs A* on the global costmap's 8-connected grid and smooths the result. Each step costs its length times <span class="mono">1 + m · c / 252</span>, where <span class="mono">c</span> is the inflated cost of the cell (0 in open space, 252 next to an obstacle) and <span class="mono">m</span> is the cost travel multiplier. Inflation spreads cost outwards from every obstacle: <span class="mono">c = 252 · exp(−k (d − r))</span> for distance <span class="mono">d</span> between the planning radius <span class="mono">r</span> and the inflation radius, with scaling factor <span class="mono">k</span>. So a high multiplier, a wide inflation band and a gentle <span class="mono">k</span> all push the path away from plants, and all make it longer. The behaviour tree plans once per goal and replans only if the path becomes invalid or the goal changes. The costmaps hold nothing but the static map, so a periodic replan learns nothing; it used to restart the path at the robot once per second, and after a corner cut each new path hugged the row-end plant more tightly until its start was inside the no-go zone ("Start occupied") and Nav2 aborted the hairpin (5, 2, −180°) from (0, 0).</p>
+  <h3>The long-path problem</h3>
+  <p>The reported "it takes a longer path when a shorter one exists" was real, and it came from this cost term. The search never chose the wrong way around a row. I compared each Smac path against the true shortest path that keeps the 0.416 m planning radius (Dijkstra on the same map with 16-connected moves) for ten start/goal pairs. What cost length was the turn at each row end. With the previous settings (inflation 1.2 m, k = 3, m = 3) paths swung out to the middle of the 3 m headland, about 1.9 m extra per row-end turn.</p>
+  <p>The wide swing had been added to protect against pure pursuit cutting the inside of hairpins. Shrinking it exposed the real cause of that corner cutting (see <a href="#gateway">Command shaping</a>, stage 3), and once that was fixed the swing could be reduced, first to inflation 0.7 m and then (below) to 0.6 m, with k = 4, m = 2.</p>
+  </div>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 900 400" role="img" aria-labelledby="hpT">
+      <title id="hpT">Row-end hairpin: old wide swing, new tighter swing and the true shortest path, drawn to scale</title>
+      <g id="hairpin"></g>
+    </svg>
+    </div>
+    <div class="legend"><span><i style="background:var(--amber)"></i>previous: inflation 1.2 m, k 3, m 3 (swing to x = 7.6 m)</span><span><i style="background:var(--leaf)"></i>current: inflation 0.6 m, k 4, m 2 (x = 7.0 m)</span><span><i style="border:1px dashed var(--muted)"></i>shortest safe path (x ≈ 6.8 m)</span></div>
+    <figcaption><b>Figure 3.</b> East headland, turning from the y = 0 aisle into the y = 2 aisle, to scale (1 m = 90 px). The wall is at x = 9 m; the row ends at x = 6 m. Each path is the centre-line the robot follows.</figcaption>
+  </figure>
+  <h3>The second long-path problem: the outer-aisle detour</h3>
+  <div style="max-width:72ch">
+  <p>A goal at (6.5, 0), straight down the centre aisle from the spawn point, still produced a 21.7 m route down the outer aisle at y = −4.1 instead of the 14.0 m straight run. The cause was the same cost term, this time inside the aisles. An inner aisle is 1.30 m clear, so its centre line sits 0.65 m from the plants on either side, inside the 0.7 m inflation radius. The best line through every inner aisle therefore carried a cost of 99 (of 252), which Smac charges as <span class="mono">1 + 2 · 99 / 252 ≈ 1.79</span> times its length. A 12 m inner aisle was priced like 21.4 m. The outer aisles, between the last row and the side wall, are 1.65 m clear and their centre line sat outside the inflation band at zero cost. A 7.6 m detour was the cheaper plan.</p>
+  <p>The fix makes every aisle centre line cost-free. The global inflation radius is now derived at startup from the narrowest clear aisle in the generated layout: one map cell short of half its width (0.6 m for the default 1.30 m aisles, never above 0.6 m). Plants still raise the cost the moment the robot leaves the centre line, so paths stay centred. The choice between aisles is now made on length alone. A unit test checks that the inner-aisle centre lines in the generated map lie outside the inflation radius. On 14 start/goal pairs, run through the real Smac planner on the same map, the mean ratio to the shortest safe path fell from 1.18 to 1.02, and the worst from 1.68 to 1.09. The price is clearance at the tightest row-end corner: 0.16 m beyond the robot's body, where it was 0.23 m.</p>
+  </div>
+  <figure>
+    <div class="fig"><svg viewBox="0 0 900 300" role="img" aria-labelledby="xsecT"><title id="xsecT">Inflated cost across the greenhouse width at x = 0, with the old 0.7 m and new 0.6 m inflation radius</title><g id="xsec"></g></svg></div>
+    <div class="legend"><span><i style="background:var(--amber)"></i>inflation 0.7 m (old)</span><span><i style="background:var(--leaf)"></i>inflation 0.6 m (current)</span><span><i style="background:var(--plant-soft);border:1px solid var(--plant)"></i>plants and side walls</span></div>
+    <figcaption><b>Figure 4.</b> Planner cost across the greenhouse width at x = 0 (y in metres, cost 0 to 252, robot centre positions). The cost rises to 253 (no-go) at 0.396 m from a plant or wall. With the old radius, every inner aisle's best line cost 99 while the outer aisles' cost 0. With the current radius, all five aisles have a cost-free centre line.</figcaption>
+  </figure>
+  <figure>
+    <div class="fig"><svg viewBox="0 0 1200 330" role="img" aria-labelledby="ratioT"><title id="ratioT">Planned length divided by shortest safe length for fourteen start and goal pairs, before and after</title><g id="ratioChart"></g></svg></div>
+    <div class="legend"><span><i style="background:var(--amber)"></i>inflation 0.7 m (previous)</span><span><i style="background:var(--leaf)"></i>inflation 0.6 m, aisle-derived (current)</span></div>
+    <figcaption><b>Figure 5.</b> Planned path length relative to the shortest safe path, from the real Smac planner on the same map, for fourteen start/goal pairs (metres, greenhouse frame). 1.00 means no detour. Amber: inflation 0.7 m. Green: the current aisle-derived 0.6 m. Labels mark the outer-aisle detours.</figcaption>
+  </figure>
+</section>
+
+<section id="controller">
+  <h2>Path follower: Regulated Pure Pursuit</h2>
+  <p>RPP steers towards a "carrot" point on the path one lookahead ahead of the robot. The lookahead is 1.5 s of measured speed, kept between 0.6 and 3.0 m. The minimum used to be 1.0 m; the tightest row-end U-turn is only 0.95 m in radius, and at the 0.2 to 0.4 m/s the base manages there, a 1.0 m carrot sat so far round the bend that the robot ran up to 0.25 m inside the path and RPP stopped on a collision. If the carrot is more than 0.5 rad off the robot's heading, RPP stops and turns in place first. Otherwise it drives the arc through the carrot at the cruise speed <span class="mono">desired_linear_vel</span>, slows on arcs tighter than 2 m radius and near the path's end, and refuses to move if the footprint projected along its command for 1.5 s would hit something.</p>
+  <h3>Why RPP replaced MPPI</h3>
+  <p>The stack previously used Nav2's MPPI controller, capped at 0.22 m/s. Raising MPPI's limit to 2 m/s did not help: its critic balance (path following against the control-cost term <span class="mono">gamma</span>) settled at 0.8 to 1.1 m/s whatever <span class="mono">vx_max</span> allowed, and six live tuning runs moved it little. MPPI also predicts motion with a model that assumes commanded yaw rates are achieved. RPP has an explicit cruise speed, which is what the operator asked for: <b>Go</b> drives at the panel's Drive value.</p>
+  <h3>Per-goal limits from the panel</h3>
+  <p>On Go, the panel sends its current Drive and Turn values. The gateway writes Drive (at most 2.0 m/s) into RPP's dynamic <span class="mono">desired_linear_vel</span>. Turn is a <i>command</i> rate, like the arrow keys, so the gateway sets RPP's in-place turn rate to the <i>actual</i> rate that command produces (Turn × current yaw gain, at most 1.2 rad/s). Navigation therefore never turns harder than the arrow keys would.</p>
+</section>
+
+<section id="gateway" class="wide">
+  <h2>Command shaping in the gateway</h2>
+  <div style="max-width:72ch">
+  <p>Every RPP command (20 Hz) passes through the same ordered stages before it reaches twist_mux. RPP's output is treated as the motion it wants, in actual m/s and rad/s.</p>
+  </div>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 1000 250" role="img" aria-labelledby="pipeT">
+      <title id="pipeT">Ordered stages that turn the path follower's command into the base command</title>
+      <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink)"/></marker></defs>
+      <g id="pipe"></g>
+    </svg>
+    </div>
+    <figcaption><b>Figure 6.</b> Stages run in this order on every command. Stages 3 and 4 only ever lower the forward speed, and both scale the yaw rate with it so the robot keeps the arc RPP planned.</figcaption>
+  </figure>
+  <div style="max-width:72ch">
+  <ol class="steps">
+    <li><b>Validate.</b> Reject stale commands (timestamp older than 0.35 s of sim time) and fail the goal if RPP ever asks for a speed outside 0 to Drive.</li>
+    <li><b>Finish (dock or final turn).</b> When the goal faces away from the arrival direction, the speed profile brakes to stop short of it: 0.7 m, or less when the goal is turned sideways, so that turning there leaves the robot at most 0.15 m beside the goal line (<span class="mono">d = min(0.7, 0.15 / |sin Δ|)</span> for a turn Δ). A 90° goal docked from 0.7 m had to recover a 0.7 m sideways offset, and the S-move swung about 0.46 m across a 1.3 m aisle into the plants; a 180° reverse dock keeps the full 0.7 m. Within that distance (along the path) and still more than 0.5 rad off the goal heading, or once within 0.075 m of the goal, the gateway takes the rest of the goal over. It cancels the Nav2 goal, because RPP keeps planning and collision-checking motions the gateway is no longer executing and would otherwise abort the goal, and runs the finish from its own 20 Hz loop. It turns in place to the goal heading, then drives onto the goal pose, forward or in reverse, with the polar-coordinate unicycle pose controller (Siegwart et al., <i>Introduction to Autonomous Mobile Robots</i>). With ρ the distance to the goal, α the bearing of the goal relative to the heading and β the remaining heading change, <span class="mono">v = 0.5·ρ</span> (0.08 to 0.3 m/s) and <span class="mono">ω = 3·α − 1·β</span> (|ω| ≤ 0.8 rad/s). The gains meet the controller's strong-stability condition, so it removes the sideways slide of the turn, including a purely sideways offset, with a short S-move that never swings wider than the starting offset. Forward or reverse is chosen once, when the drive starts. Because RPP's collision check is no longer active, the finish stops with an error if the measured clearance to any collider falls below the robot's physical radius (0.368 m). The gateway then declares success itself, once the measured pose is within tolerance and the base is at rest (below 0.02 m/s and 0.03 rad/s).</li>
+    <li><b>Path speed profile.</b> From the planned path the gateway computes a speed limit at every point: curvature measured over ±0.5 m allows 0.8 m/s² lateral acceleration and 0.47 rad/s actual yaw, and a backward pass lets the robot brake at 1.2 m/s² into every slower point ahead. The applied limit is the lowest value <i>within the current pure-pursuit lookahead</i>, because RPP already steers at the carrot. Without that, the robot reached a hairpin fast with the carrot already around the bend and cut straight at the row-end plant. The 0.47 rad/s comes from the lookahead too: it keeps 1.5 s of speed within 0.7 of the curve radius (<span class="mono">v ≤ 0.7·R / 1.5</span>), so the carrot stays on the near side of a bend. A separate <span class="mono">√(2 · 1.2 · remaining)</span> term brakes for the goal, floored at 0.15 m/s to overcome stiction.</li>
+    <li><b>Traction limit.</b> The forward command stays at most 0.5 m/s above the measured speed. A full 2 m/s step otherwise spins the wheels for seconds and the robot loses its steering grip.</li>
+    <li><b>Speed feedback.</b> A correction of up to ±0.2 m/s (gain 1) holds the planned speed and recovers the ~7% longitudinal slip at cruise.</li>
+    <li><b>Yaw-gain inversion with rate feedback.</b> The wanted yaw rate is divided by the yaw gain (starts at 0.28, refined online from steady turns while following the path; not while docking, where a 90° dock holds the turn command saturated while the base barely pivots and once dragged the gain to its 0.15 floor), with <span class="mono">0.8 × (wanted − measured)</span> added to cover the base's ~0.5 s yaw lag.</li>
+    <li><b>Clamp.</b> The result is limited to the panel's Turn command rate (at most the stock 4.0 rad/s) and published on <span class="mono">greenhouse/nav_cmd</span>.</li>
+  </ol>
+  </div>
+</section>
+
+<section id="physics" class="wide">
+  <h2>Measured base behaviour</h2>
+  <div style="max-width:72ch">
+  <p>Every design choice above traces to a measurement of the simulated base on default firm earth (ground friction 0.9, WheelSlip compliance 0.1 longitudinal / 1.0 lateral). These are properties of the simulation, which was left unchanged. A real Jackal on real soil would need the same measurements repeated.</p>
+  </div>
+  <div class="tbl" style="max-width:900px"><table>
+    <thead><tr><th>Effect</th><th>Measurement</th><th>Consequence in the stack</th></tr></thead>
+    <tbody>
+      <tr><td>Yaw gain in place</td><td>actual ≈ 0.28 × commanded, 0.2 to 2.0 rad/s</td><td>gateway divides by the gain; panel Turn 4.0 means ≈ 1.1 rad/s actual</td></tr>
+      <tr><td>Yaw gain while driving</td><td>≈ 0.5 at 1 m/s (−2 rad/s cmd gives −0.8 to −1.2)</td><td>online gain estimate plus rate feedback</td></tr>
+      <tr><td>Yaw lag</td><td>≈ 0.5 s from command to response</td><td>lookahead ≥ 1.5 s of speed; rate feedback 0.8</td></tr>
+      <tr><td>Acceleration from rest</td><td>2 m/s commanded reaches ≈ 1.9 m/s after 4 s, ~5 m</td><td>traction limit; braking profile</td></tr>
+      <tr><td>Steering grip while accelerating</td><td>−4 rad/s cmd gave ≈ 0 rad/s during wheelspin</td><td>forward command ≤ measured + 0.5 m/s</td></tr>
+      <tr><td>Slide while spinning</td><td>180° spin: 4 to 24 cm, less at faster turn rates</td><td>spin at full rate; dock along the goal line afterwards</td></tr>
+      <tr><td>Simulation speed</td><td>real-time factor ≈ 0.35 headless with cameras</td><td>tests reported in simulated seconds</td></tr>
+    </tbody>
+  </table></div>
+  <figure style="max-width:900px">
+    <div class="fig"><svg viewBox="0 0 900 300" role="img" aria-labelledby="spinT"><title id="spinT">Sideways slide during a 180 degree spin in place by commanded turn rate and direction</title><g id="spinChart"></g></svg></div>
+    <figcaption><b>Figure 7.</b> Displacement of base_link after a 180° spin in place with no other command, by commanded yaw rate (rad/s; actual ≈ 0.28×). Turning faster slides less. That is why the stack spins at the full Turn rate and then corrects position by docking, rather than spinning slowly while trying to hold position (which was tried and made drift worse).</figcaption>
+  </figure>
+</section>
+
+<section id="lifecycle">
+  <h2>Goal lifecycle and safety</h2>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 760 300" role="img" aria-labelledby="lcT">
+      <title id="lcT">Goal phases from Ready through Planning and Navigating to Succeeded, Error or Canceled</title>
+      <g id="lifecycle"></g>
+    </svg>
+    </div>
+    <figcaption><b>Figure 8.</b> Phases reported on the panel. Inside Navigating, RPP follows the path until the last metre, then the gateway cancels the Nav2 goal and finishes with a dock or a final turn.</figcaption>
+  </figure>
+  <p>Before a goal starts, the gateway requires fresh physics feedback, all four Nav2 nodes active and a valid map. The goal and the robot's current position must both be at least the planning radius from any collider; if the robot is closer than 0.10 m outside the planning radius, Go first backs it off. Inside the radius Smac fails with "Start occupied", and just outside it RPP refuses the in-place turn most goals start with: a spin has about 0.20 m of slack off an aisle centre line and slides 4 to 24 cm. The gateway creeps straight forward or backward at 0.15 m/s, toward the side the known map shows more room on, until it has the 0.10 m of room or has moved 0.3 m, then stops and plans if it is at least outside the planning radius. It is refused if it ends closer, below the physical radius, on any manual command, or if its heading runs along the obstacle so that moving gains nothing and it is inside the planning radius.</p>
+  <p>While the robot navigates, motion stops and the goal fails on: physics feedback older than 0.12 s of simulation time or 1.5 s of wall time; a Nav2 node leaving the active state; a command outside the goal's limits; 180 s of simulated time or 900 s of wall time. Arrow keys, Stop or Cancel cancel immediately and manual commands take over through twist_mux priority. For a terrain/contact Apply the goal is cancelled, the base must stay still for 0.5 s of simulated time, and the map is reloaded; the operator presses Go again.</p>
+  <p>Success is declared only on the measured pose, at rest: position within 0.075 m and heading within 0.07 rad (4°) of the goal, the goal checker's own tolerances. The gateway finishes goals itself, after cancelling the Nav2 goal for the last metre. Nav2's own goal checker stays non-stateful: a latched "position reached" was observed carrying over into the next goal after a cancelled one, and when the tree still replanned every second, each replan reset it before it helped.</p>
+</section>
+
+<section id="results" class="wide">
+  <h2>Results</h2>
+  <div style="max-width:72ch">
+  <p>Headless runs in the production container, timed in simulated seconds, Drive 2.0 m/s and Turn 4.0 rad/s unless noted.</p>
+  </div>
+  <div class="tbl" style="max-width:900px"><table id="resultsTable">
+    <thead><tr><th>Route</th><th class="n">Original stack</th><th class="n">Current</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Straight 13 m aisle run</td><td class="n">19.8 s, peak 0.8 m/s</td><td class="n">10 to 12 s, peak 1.8 to 1.9 m/s</td><td>speed limited by traction on soil</td></tr>
+      <tr><td>180° turn, then 9.5 m</td><td class="n">89 s</td><td class="n">12 to 16 s</td><td>turn in place at the full Turn rate</td></tr>
+      <tr><td>Cross-aisle route, two turnarounds (≈18 m)</td><td class="n">122 to 132 s</td><td class="n">25 to 31 s</td><td>includes the dock at the goal</td></tr>
+      <tr><td>Drive set to 0.5 m/s</td><td class="n">capped 0.22 m/s</td><td class="n">0.50 to 0.52 m/s</td><td>panel value respected</td></tr>
+      <tr><td>Final pose error (7-goal loop)</td><td class="n">2.6 to 5.1 cm (slowly)</td><td class="n">3.6 to 7.1 cm, ≤ 3.3°</td><td>verified at rest on the measured pose</td></tr>
+    </tbody>
+  </table></div>
+  <div style="max-width:72ch">
+  <p>The repository's acceptance tool (<span class="mono">tools/verify_navigation.py</span>) passes all three phases: a goal around an obstacle row, a safety phase (manual override stops and cancels; a frozen physics bridge stops motion as stale feedback), and a terrain update during navigation. The 55 unit tests run at every image build.</p>
+  </div>
+</section>
+
+<section id="limits">
+  <h2>Limits and open questions</h2>
+  <ul>
+    <li>The yaw gain, lag, traction and slide values were measured on the default simulated soil. The yaw gain adapts online; the others do not. Changing ground friction or slip compliance under Parameters may need them re-measured.</li>
+    <li>A 180° turn in place slides this base by up to 0.24 m. Docking corrects this, at the cost of a slower finish (about 10 to 20 s of simulated time for a goal that faces away from the arrival direction).</li>
+    <li>The map comes from collision geometry. There is no perception of unmodelled or moving obstacles; RPP's collision check only knows the static map.</li>
+    <li>Smac 2D plans positions only, so a goal facing the opposite way to the arrival direction always costs a turn near the goal. A state-lattice planner (Smac Lattice) could plan the heading in, at a higher planning cost.</li>
+    <li>The only recovery is the back-off before planning (at most 0.3 m straight, checked against the known map, only when Go is pressed). Nav2 itself runs no recovery behaviours: no blind motion near crops. A goal-start spin that slides more than ~0.20 m off the aisle centre still ends that goal with an error (RPP: "collision ahead"); the next Go backs off first.</li>
+  </ul>
+</section>
+
+<section id="params" class="wide">
+  <h2>Parameter reference</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Where</th><th>Parameter</th><th class="n">Value</th><th>Role</th></tr></thead>
+    <tbody id="paramRows"></tbody>
+  </table></div>
+  <div style="max-width:72ch">
+  <p>Files: <span class="mono">config/navigation.yaml</span> (Nav2), <span class="mono">tools/navigation_gateway.py</span> (gateway constants), <span class="mono">greenhouse/speed_profile.py</span> (curve and braking limits), <span class="mono">greenhouse/navigation_map.py</span> (map, footprint, padding), <span class="mono">config/navigate.xml</span> (behaviour tree).</p>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg";
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+
+/* Figure 2: plants and inflation, 1 m = 150 px, aisle centre y=180 */
+(function(){
+  const g=document.getElementById("plants"),inf=document.getElementById("infl"),S=150,cy=180;
+  for(const row of [-1,1]){
+    const y=cy-row*S;
+    // inflation band: cost is non-zero within 0.6 m of the plant edge
+    el("rect",{x:20,y:(row>0? y+0.35*S : y-0.35*S-0.60*S),width:860,height:0.60*S,class:"s-infl"},inf);
+    for(let x=0;x<=6;x+=0.75){const px=60+x*S;if(px>880)break;el("circle",{cx:px,cy:y,r:0.35*S,class:"s-plant"},g)}
+  }
+  el("text",{x:30,y:24,class:"s-tm"},g,"plant row, y = +1 m");
+  el("text",{x:30,y:350,class:"s-tm"},g,"plant row, y = −1 m");
+})();
+
+/* Figure 3: hairpin, 1 m = 90 px; x from 3.5 to 9.2 m, y from -0.8 to 2.8 m */
+(function(){
+  const g=document.getElementById("hairpin"),S=90,X=x=>20+(x-3.5)*S,Y=y=>330-(y+0.6)*S;
+  el("line",{x1:X(9),y1:Y(-0.7),x2:X(9),y2:Y(2.9),class:"s-ar"},g);
+  el("text",{x:X(9)+6,y:Y(2.6),class:"s-tm"},g,"wall x = 9");
+  for(const ry of [-1,1,3]){for(let x=3.75;x<=6.01;x+=0.75){if(Y(ry)>Y(-0.75)+10||Y(ry)<Y(2.95)-10)continue;el("circle",{cx:X(x),cy:Y(ry),r:0.35*S,class:"s-plant"},g)}}
+  el("text",{x:X(3.6),y:Y(1)+4,class:"s-tm"},g,"row y = 1");
+  function hairpin(xt,cls){
+    const r=1.0, xs=Math.min(6.3, xt-r+0.15);
+    const d=`M${X(3.6)} ${Y(0)} H${X(xs)} C${X(xt)} ${Y(0)} ${X(xt)} ${Y(0)} ${X(xt)} ${Y(1)} C${X(xt)} ${Y(2)} ${X(xt)} ${Y(2)} ${X(xs)} ${Y(2)} H${X(3.6)}`;
+    el("path",{d,class:cls},g);
+  }
+  hairpin(7.6,"s-old");hairpin(7.0,"s-new");hairpin(6.8,"s-short");
+  el("text",{x:X(7.6)+6,y:Y(1)+4,class:"s-tm",style:"fill:var(--amber)"},g,"7.6");
+  el("text",{x:X(7.0)-30,y:Y(1)+4,class:"s-tm",style:"fill:var(--leaf)"},g,"7.0");
+  el("text",{x:X(3.6),y:Y(0)-8,class:"s-tm"},g,"aisle y = 0");
+  el("text",{x:X(3.6),y:Y(2)-8,class:"s-tm"},g,"aisle y = 2");
+  el("line",{x1:X(3.6),y1:Y(-0.55),x2:X(4.6),y2:Y(-0.55),class:"s-ar"},g);el("text",{x:X(3.95),y:Y(-0.55)-6,class:"s-tm"},g,"1 m");
+})();
+
+/* Figure 4: cost cross-section across y at x = 0 */
+(function(){
+  const g=document.getElementById("xsec"),L=50,R=880,T=24,B=250,Y=y=>L+(y+5)/10*(R-L),C=c=>B-c/253*(B-T);
+  const edges=[-4.95,-3.35,-2.65,-1.35,-0.65,0.65,1.35,2.65,3.35,4.95],r=0.396;
+  const solid=[[-5.2,-4.95],[-3.35,-2.65],[-1.35,-0.65],[0.65,1.35],[2.65,3.35],[4.95,5.2]];
+  for(const [a,b] of solid)el("rect",{x:Y(Math.max(a,-5)),y:T,width:Y(Math.min(b,5))-Y(Math.max(a,-5)),height:B-T,class:"s-plant",opacity:.55},g);
+  for(const c of [0,99,252]){el("line",{x1:L,x2:R,y1:C(c),y2:C(c),class:"s-grid"},g);el("text",{x:L-6,y:C(c)+4,class:"s-tm","text-anchor":"end"},g,String(c))}
+  const inside=y=>solid.some(([a,b])=>y>a&&y<b);
+  function curve(radius,cls){
+    let d="",pen=false;
+    for(let y=-5;y<=5.0001;y+=0.01){
+      if(inside(y)){pen=false;continue}
+      const dist=Math.min(...edges.map(e=>Math.abs(y-e)));
+      const c=dist<=r?253:(dist<=radius+1e-9?252*Math.exp(-4*(dist-r)):0);
+      d+=(pen?"L":"M")+Y(y).toFixed(1)+" "+C(c).toFixed(1);pen=true;
+    }
+    el("path",{d,class:cls},g);
+  }
+  curve(0.7,"s-old");curve(0.6,"s-new");
+  for(const y of [-4.15,-2,0,2,4.15])el("text",{x:Y(y),y:B+16,class:"s-tm","text-anchor":"middle"},g,(y<0?"−":"")+Math.abs(y));
+  el("text",{x:Y(0),y:C(99)-8,class:"s-tm","text-anchor":"middle",style:"fill:var(--amber)"},g,"99");
+  el("text",{x:Y(-4.15),y:B+32,class:"s-tm","text-anchor":"middle"},g,"outer aisle");
+  el("text",{x:Y(0),y:B+32,class:"s-tm","text-anchor":"middle"},g,"centre aisle");
+  el("line",{x1:L,x2:R,y1:B,y2:B,class:"s-ar"},g);
+  el("text",{x:L,y:T-8,class:"s-tm"},g,"cost");
+})();
+
+/* Figure 5: path ratio chart */
+const PAIRS=[["(−7.5,0)→(6.5,0)",1.549,1.0],["(−7.5,0)→(5.5,0)",1.0,1.0],["(−7.5,0)→(4,2)",1.021,1.011],["(4,2)→(0,−2)",1.055,1.032],["(0,−2)→(−7.5,0)",1.027,1.014],["(6.5,0)→(−6.5,0)",1.676,1.0],["(−7.5,0)→(0,2)",1.03,1.016],["(0,2)→(0,−2)",1.042,1.025],["(0,−2)→(3,−2)",1.0,1.0],["(−7.5,0)→(7.3,3)",1.151,1.013],["(5.5,0)→(−6.6,−2)",1.494,1.017],["(6.5,−2)→(−6.6,2)",1.296,1.02],["(5.5,−4.15)→(6.5,−2)",1.16,1.086],["(−3,0)→(3,2)",1.048,1.029]];
+function ratioChart(){
+  const g=document.getElementById("ratioChart");g.innerHTML="";
+  const L=60,R=1180,T=20,B=260,min=1.0,max=Math.ceil(Math.max(...PAIRS.map(p=>p[1]))*10)/10,yy=v=>B-(v-min)/(max-min)*(B-T);
+  for(let v=1.0;v<=max+1e-4;v+=0.1){el("line",{x1:L,x2:R,y1:yy(v),y2:yy(v),class:"s-grid"},g);el("text",{x:L-8,y:yy(v)+4,class:"s-tm","text-anchor":"end"},g,v.toFixed(2))}
+  const n=PAIRS.length,w=(R-L)/n;
+  PAIRS.forEach((p,i)=>{
+    const x=L+i*w,bw=w*0.32;
+    el("rect",{x:x+w*0.16,y:yy(p[1]),width:bw,height:B-yy(p[1]),class:"s-bar-old"},g);
+    if(p[2]!=null)el("rect",{x:x+w*0.16+bw+2,y:yy(p[2]),width:bw,height:B-yy(p[2]),class:"s-bar-new"},g);
+    const [from,to]=p[0].split("→");
+    el("text",{x:x+w/2,y:B+16,class:"s-tm","text-anchor":"middle"},g,from);
+    el("text",{x:x+w/2,y:B+30,class:"s-tm","text-anchor":"middle"},g,"→ "+to);
+    if(p[2]!=null&&p[1]-p[2]>0.1)el("text",{x:x+w/2,y:Math.min(yy(p[1]),yy(p[2]))-6,class:"s-tm","text-anchor":"middle"},g,"+"+Math.round((p[1]-1)*100)+"% → +"+Math.round((p[2]-1)*100)+"%");
+  });
+  el("line",{x1:L,x2:R,y1:B,y2:B,class:"s-ar"},g);
+  el("text",{x:L,y:T-6,class:"s-tm"},g,"planned ÷ shortest");
+}
+
+/* Figure 6: pipeline */
+(function(){
+  const g=document.getElementById("pipe");
+  const st=[["RPP command","v, ω wanted"],["1 Validate","stale / out of limits"],["2 Finish","dock or final turn, near the goal"],["3 Path speed","curves in lookahead, goal"],["4 Traction","≤ measured + 0.5"],["5 Speed feedback","±0.2 m/s"],["6 Yaw inversion","÷ gain, + rate fb"],["7 Clamp","panel Turn"],["greenhouse/nav_cmd","to twist_mux"]];
+  const w=96,gap=13;
+  st.forEach((s,i)=>{
+    const x=10+i*(w+gap),edge=i===0||i===st.length-1;
+    el("rect",{x,y:70,width:w,height:96,rx:5,class:edge?"s-box":"s-gw"},g);
+    const words=s[0].split(" ");let lines=[];let cur="";for(const wd of words){if((cur+" "+wd).trim().length>11){lines.push(cur.trim());cur=wd}else cur+=" "+wd}lines.push(cur.trim());
+    lines.forEach((l,j)=>el("text",{x:x+8,y:94+j*17,class:"s-h",style:"font-size:13px"},g,l));
+    const sw=s[1].split(" ");lines=[];cur="";for(const wd of sw){if((cur+" "+wd).trim().length>14){lines.push(cur.trim());cur=wd}else cur+=" "+wd}lines.push(cur.trim());
+    lines.forEach((l,j)=>el("text",{x:x+8,y:134+j*15,class:"s-ts",style:"font-size:11px"},g,l));
+    if(i<st.length-1)el("line",{x1:x+w,y1:118,x2:x+w+gap-1,y2:118,class:"s-ar","marker-end":"url(#ah2)"},g);
+  });
+  el("text",{x:10,y:40,class:"s-ts"},g,"actual motion wanted");
+  el("text",{x:990,y:40,class:"s-ts","text-anchor":"end"},g,"command the base needs");
+  el("text",{x:10,y:200,class:"s-tm"},g,"stages 3 and 4 lower v and scale ω by the same ratio, keeping the planned curvature");
+})();
+
+/* Figure 7: spin drift */
+(function(){
+  const g=document.getElementById("spinChart");
+  const d=[["+1.0",.176],["+2.2",.141],["+4.0",.086],["−1.0",.101],["−2.2",.068],["−4.0",.042]];
+  const L=70,R=880,T=24,B=250,max=0.20,yy=v=>B-v/max*(B-T);
+  for(let v=0;v<=0.2001;v+=0.05){el("line",{x1:L,x2:R,y1:yy(v),y2:yy(v),class:"s-grid"},g);el("text",{x:L-8,y:yy(v)+4,class:"s-tm","text-anchor":"end"},g,(v*100).toFixed(0)+" cm")}
+  const w=(R-L)/d.length;
+  d.forEach((p,i)=>{const x=L+i*w+w*0.25;el("rect",{x,y:yy(p[1]),width:w*0.5,height:B-yy(p[1]),class:i<3?"s-bar-old":"s-bar-new"},g);
+    el("text",{x:x+w*0.25,y:yy(p[1])-6,class:"s-tm","text-anchor":"middle"},g,(p[1]*100).toFixed(1));
+    el("text",{x:x+w*0.25,y:B+18,class:"s-tm","text-anchor":"middle"},g,p[0]+" rad/s")});
+  el("line",{x1:L,x2:R,y1:B,y2:B,class:"s-ar"},g);
+  el("text",{x:L+w*1.5,y:B+38,class:"s-ts","text-anchor":"middle"},g,"counter-clockwise");
+  el("text",{x:L+w*4.5,y:B+38,class:"s-ts","text-anchor":"middle"},g,"clockwise");
+})();
+
+/* Figure 8: lifecycle */
+(function(){
+  const g=document.getElementById("lifecycle");
+  const box=(x,y,w,t,s,cls)=>{el("rect",{x,y,width:w,height:52,rx:6,class:cls||"s-box"},g);el("text",{x:x+12,y:y+22,class:"s-h"},g,t);if(s)el("text",{x:x+12,y:y+40,class:"s-ts"},g,s)};
+  const ar=(d)=>el("path",{d,class:"s-ar","marker-end":"url(#ah)"},g);
+  box(10,20,120,"Ready","fresh, nodes active");
+  box(170,20,130,"Planning","goal accepted?");
+  box(340,20,270,"Navigating","RPP follows path → gateway finish","s-nav");
+  box(650,20,100,"Succeeded","pose verified");
+  box(340,150,130,"Canceled","override, Cancel");
+  box(500,150,150,"Error","stale, timeout, …");
+  ar("M130 46 H168");ar("M300 46 H338");ar("M610 46 H648");ar("M405 72 V148");ar("M560 72 V148");ar("M235 72 C235 140 470 120 520 148");
+  el("text",{x:10,y:240,class:"s-ts"},g,"Every exit from Navigating stops the base first; Succeeded and Error record the measured final pose.");
+})();
+
+/* Parameter table */
+(function(){
+  const rows=[
+    ["Nav2 planner","cost_travel_multiplier","2.0","cost-vs-length trade-off"],
+    ["global costmap","inflation_radius / cost_scaling_factor","≤ 0.6 m (half the narrowest aisle − 1 cell) / 4.0","clearance from plants; every aisle centre line cost-free"],
+    ["global costmap","robot_radius","0.396 m","circumscribed footprint + padding"],
+    ["behaviour tree","replanning","once; again only if the path turns invalid or the goal changes","IsPathValid checked at 1 Hz in navigate.xml"],
+    ["RPP","desired_linear_vel","panel Drive (≤ 2.0 m/s)","set per goal"],
+    ["RPP","rotate_to_heading_angular_vel","Turn × yaw gain (≤ 1.2 rad/s)","set per goal, actual rate"],
+    ["RPP","lookahead_time / min / max","1.5 s / 0.6 m / 3.0 m","pure-pursuit carrot distance"],
+    ["RPP","rotate_to_heading_min_angle","0.5 rad","turn in place above this"],
+    ["RPP","regulated_linear_scaling_min_radius","2.0 m","slow on tighter arcs"],
+    ["local costmap","size / resolution / footprint_padding","8 × 8 m / 0.025 m / 0.020 m","collision check"],
+    ["goal checker","xy / yaw tolerance, stateful","0.075 m / 0.07 rad, no","Nav2 arrival test"],
+    ["gateway","STOPPED_SPEED / STOPPED_TURN","0.02 m/s / 0.03 rad/s","success = inside goal checker tolerance and at rest"],
+    ["gateway","YAW_GAIN_PRIOR / YAW_RATE_FEEDBACK","0.28 / 0.8","yaw inversion"],
+    ["gateway","TRACTION_LEAD","0.5 m/s","wheelspin limit"],
+    ["gateway","CURVE_LATERAL_ACCEL / CURVE_TURN_RATE / CURVE_LOOKAHEAD_FRACTION","0.8 m/s² / 1.0 rad/s / 0.7","curve speed limit (the fraction caps actual yaw at 0.47 rad/s)"],
+    ["gateway","PATH_BRAKING / PATH_MIN_SPEED","1.2 m/s² / 0.15 m/s","braking profile"],
+    ["gateway","DOCK_DISTANCE / DOCK_LATERAL_MAX / DOCK_MIN_TURN","0.7 m / 0.15 m / 0.5 rad","when docking starts"],
+    ["gateway","BACKOFF_SPEED / BACKOFF_DISTANCE / BACKOFF_ROOM","0.15 m/s / 0.3 m / 0.10 m","back-off before planning"],
+    ["gateway","DOCK_GAIN_RHO / ALPHA / BETA","0.5 / 3.0 / −1.0","polar pose controller"],
+    ["gateway","DOCK_SPEED / DOCK_TURN_RATE","0.08 to 0.3 m/s / 0.8 rad/s","docking limits"],
+  ];
+  const tb=document.getElementById("paramRows");
+  for(const r of rows){const tr=document.createElement("tr");r.forEach((c,i)=>{const td=document.createElement("td");if(i===1){const s=document.createElement("span");s.className="mono";s.textContent=c;td.appendChild(s)}else td.textContent=c;if(i===2)td.className="n";tr.appendChild(td)});tb.appendChild(tr)}
+})();
+
+ratioChart();
+</script>

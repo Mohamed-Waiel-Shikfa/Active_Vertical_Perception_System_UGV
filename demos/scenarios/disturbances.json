@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "seed": 11,
+  "greenhouse": {"ground_bump_rms": 0.005},
+  "actuator": {"gimbal_stabilise": [true, true]},
+  "start": {"x": -7.5, "y": 0.0, "rz": 0.0},
+  "objects": [
+    {"id": "bag1", "type": "fertiliser_block", "x": 6.5, "y": 2.0, "rz": 20},
+    {"id": "tomato1", "type": "fallen_tomato", "x": 0.0, "y": -2.0},
+    {"id": "plant1", "type": "fallen_plant", "x": 2.0, "y": 4.0, "rz": 5},
+    {"id": "robot2", "type": "robot", "x": 7.5, "y": -2.0, "rz": 180},
+    {"id": "worker", "type": "person", "x": 6.0, "y": -4.0, "rz": 180}
+  ],
+  "events": [
+    {"t": 20, "action": "move", "id": "worker", "x": 4.0},
+    {"t": 28, "action": "move", "id": "worker", "x": 2.0},
+    {"t": 36, "action": "move", "id": "worker", "x": 0.0},
+    {"t": 44, "action": "move", "id": "worker", "x": -2.0, "rz": 90},
+    {"t": 52, "action": "add", "id": "tomato2", "type": "fallen_tomato", "x": 3.0, "y": 0.0},
+    {"t": 60, "action": "move", "id": "robot2", "x": 6.5, "rz": 160},
+    {"t": 75, "action": "remove", "id": "bag1"}
+  ]
+}

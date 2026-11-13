@@ -1,0 +1,753 @@
+{
+  "configById": {
+    "3D!robot": {
+      "lichtblickPanelTitle": "Robot, TF and lidar",
+      "followTf": "base_link",
+      "followMode": "follow-position",
+      "scene": {
+        "transforms": {
+          "showLabel": false,
+          "axisScale": 1
+        },
+        "meshUpAxis": "z_up"
+      },
+      "cameraState": {
+        "distance": 3.5,
+        "perspective": true,
+        "phi": 60,
+        "thetaOffset": 135,
+        "targetOffset": [
+          0,
+          0,
+          0.4
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "fovy": 45,
+        "near": 0.01,
+        "far": 5000
+      },
+      "topics": {
+        "/j100_0000/tf": {
+          "visible": true
+        },
+        "/j100_0000/tf_static": {
+          "visible": true
+        },
+        "/j100_0000/sensors/lidar2d_0/scan": {
+          "visible": true,
+          "colorField": "range",
+          "colorMode": "colormap",
+          "pointSize": 3
+        }
+      },
+      "layers": {
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "visible": true,
+          "label": "Grid",
+          "frameId": "odom",
+          "size": 20,
+          "divisions": 20,
+          "lineWidth": 1,
+          "color": "#248eff40",
+          "order": 1
+        },
+        "robot": {
+          "layerId": "foxglove.Urdf",
+          "visible": true,
+          "label": "Robot model",
+          "order": 2,
+          "sourceType": "topic",
+          "topic": "/j100_0000/robot_description",
+          "url": "",
+          "filePath": "",
+          "parameter": "",
+          "framePrefix": "",
+          "displayMode": "auto",
+          "fallbackColor": "#ffffff"
+        }
+      },
+      "transforms": {
+        "frame:base_link": {
+          "visible": true
+        },
+        "frame:camera1_link": {
+          "visible": true
+        },
+        "frame:camera1_optical": {
+          "visible": false
+        },
+        "frame:camera2_link": {
+          "visible": true
+        },
+        "frame:camera2_optical": {
+          "visible": false
+        },
+        "frame:chassis_link": {
+          "visible": false
+        },
+        "frame:default_mount": {
+          "visible": false
+        },
+        "frame:fpb30_carriage": {
+          "visible": true
+        },
+        "frame:fpb30_motor": {
+          "visible": false
+        },
+        "frame:fpb30_mount": {
+          "visible": false
+        },
+        "frame:fpb30_mount_upright": {
+          "visible": false
+        },
+        "frame:fpb30_rail": {
+          "visible": false
+        },
+        "frame:fpb30_top_cap": {
+          "visible": false
+        },
+        "frame:front_0_mount": {
+          "visible": false
+        },
+        "frame:front_fender_link": {
+          "visible": false
+        },
+        "frame:front_left_wheel_link": {
+          "visible": false
+        },
+        "frame:front_right_wheel_link": {
+          "visible": false
+        },
+        "frame:gimbal1_base": {
+          "visible": false
+        },
+        "frame:gimbal1_roll_link": {
+          "visible": false
+        },
+        "frame:gimbal1_yaw_link": {
+          "visible": false
+        },
+        "frame:gimbal2_base": {
+          "visible": false
+        },
+        "frame:gimbal2_roll_link": {
+          "visible": false
+        },
+        "frame:gimbal2_yaw_link": {
+          "visible": false
+        },
+        "frame:gimbal_crossbar": {
+          "visible": false
+        },
+        "frame:gps_0_link": {
+          "visible": false
+        },
+        "frame:greenhouse": {
+          "visible": false
+        },
+        "frame:imu_0_link": {
+          "visible": false
+        },
+        "frame:j100_0000/nav_base": {
+          "visible": false
+        },
+        "frame:j100_0000/nav_odom": {
+          "visible": false
+        },
+        "frame:lidar2d_0_laser": {
+          "visible": true
+        },
+        "frame:lidar2d_0_link": {
+          "visible": false
+        },
+        "frame:map": {
+          "visible": false
+        },
+        "frame:odom": {
+          "visible": false
+        },
+        "frame:rear_0_mount": {
+          "visible": false
+        },
+        "frame:rear_fender_link": {
+          "visible": false
+        },
+        "frame:rear_left_wheel_link": {
+          "visible": false
+        },
+        "frame:rear_right_wheel_link": {
+          "visible": false
+        }
+      },
+      "publish": {
+        "type": "point"
+      },
+      "imageMode": {}
+    },
+    "Image!cam1": {
+      "lichtblickPanelTitle": "Camera 1 (left) RGB",
+      "imageMode": {
+        "imageTopic": "/j100_0000/greenhouse/camera1/image"
+      }
+    },
+    "Image!cam1mono": {
+      "lichtblickPanelTitle": "Camera 1 mono",
+      "imageMode": {
+        "imageTopic": "/j100_0000/greenhouse/camera1/image_mono"
+      }
+    },
+    "Image!cam2": {
+      "lichtblickPanelTitle": "Camera 2 (right) RGB",
+      "imageMode": {
+        "imageTopic": "/j100_0000/greenhouse/camera2/image"
+      }
+    },
+    "Image!cam2mono": {
+      "lichtblickPanelTitle": "Camera 2 mono",
+      "imageMode": {
+        "imageTopic": "/j100_0000/greenhouse/camera2/image_mono"
+      }
+    },
+    "Plot!x": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[6]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[6]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF",
+          "color": "#409eff"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[11]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "truth",
+          "color": "#3a3a3a"
+        }
+      ],
+      "lichtblickPanelTitle": "x (greenhouse frame)",
+      "yAxisLabel": "m",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!y": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[7]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[7]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF",
+          "color": "#409eff"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[12]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "truth",
+          "color": "#3a3a3a"
+        }
+      ],
+      "lichtblickPanelTitle": "y (greenhouse frame)",
+      "yAxisLabel": "m",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!yaw": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[8]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[8]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF",
+          "color": "#409eff"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[13]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "truth",
+          "color": "#3a3a3a"
+        }
+      ],
+      "lichtblickPanelTitle": "yaw",
+      "yAxisLabel": "rad",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!vx": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[9]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[9]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF",
+          "color": "#409eff"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[14]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "truth",
+          "color": "#3a3a3a"
+        }
+      ],
+      "lichtblickPanelTitle": "vx (body)",
+      "yAxisLabel": "m/s",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!wz": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[10]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[10]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF",
+          "color": "#409eff"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[15]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "truth",
+          "color": "#3a3a3a"
+        }
+      ],
+      "lichtblickPanelTitle": "wz (body)",
+      "yAxisLabel": "rad/s",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!eplanar": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[2]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom - truth",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[2]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF - truth",
+          "color": "#409eff"
+        }
+      ],
+      "lichtblickPanelTitle": "Planar position error",
+      "yAxisLabel": "m",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!ex": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[0]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom - truth",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[0]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF - truth",
+          "color": "#409eff"
+        }
+      ],
+      "lichtblickPanelTitle": "x error",
+      "yAxisLabel": "m",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!ey": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[1]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom - truth",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[1]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF - truth",
+          "color": "#409eff"
+        }
+      ],
+      "lichtblickPanelTitle": "y error",
+      "yAxisLabel": "m",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!eyaw": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[3]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom - truth",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[3]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF - truth",
+          "color": "#409eff"
+        }
+      ],
+      "lichtblickPanelTitle": "Yaw error",
+      "yAxisLabel": "rad",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!evx": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[4]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom - truth",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[4]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF - truth",
+          "color": "#409eff"
+        }
+      ],
+      "lichtblickPanelTitle": "vx error",
+      "yAxisLabel": "m/s",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!ewz": {
+      "paths": [
+        {
+          "value": "/greenhouse/eval/wheel_odom_error.data[5]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "wheel odom - truth",
+          "color": "#e6a23c"
+        },
+        {
+          "value": "/greenhouse/eval/ekf_error.data[5]",
+          "enabled": true,
+          "timestampMethod": "receiveTime",
+          "label": "EKF - truth",
+          "color": "#409eff"
+        }
+      ],
+      "lichtblickPanelTitle": "wz error",
+      "yAxisLabel": "rad/s",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!acc": {
+      "paths": [
+        {
+          "value": "/j100_0000/sensors/imu_0/data_raw.linear_acceleration.x",
+          "enabled": true,
+          "timestampMethod": "headerStamp",
+          "label": "x",
+          "color": "#e5484d"
+        },
+        {
+          "value": "/j100_0000/sensors/imu_0/data_raw.linear_acceleration.y",
+          "enabled": true,
+          "timestampMethod": "headerStamp",
+          "label": "y",
+          "color": "#30a46c"
+        },
+        {
+          "value": "/j100_0000/sensors/imu_0/data_raw.linear_acceleration.z",
+          "enabled": true,
+          "timestampMethod": "headerStamp",
+          "label": "z",
+          "color": "#0091ff"
+        }
+      ],
+      "lichtblickPanelTitle": "IMU linear acceleration",
+      "yAxisLabel": "m/s\u00b2",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Plot!gyro": {
+      "paths": [
+        {
+          "value": "/j100_0000/sensors/imu_0/data_raw.angular_velocity.x",
+          "enabled": true,
+          "timestampMethod": "headerStamp",
+          "label": "x",
+          "color": "#e5484d"
+        },
+        {
+          "value": "/j100_0000/sensors/imu_0/data_raw.angular_velocity.y",
+          "enabled": true,
+          "timestampMethod": "headerStamp",
+          "label": "y",
+          "color": "#30a46c"
+        },
+        {
+          "value": "/j100_0000/sensors/imu_0/data_raw.angular_velocity.z",
+          "enabled": true,
+          "timestampMethod": "headerStamp",
+          "label": "z",
+          "color": "#0091ff"
+        }
+      ],
+      "lichtblickPanelTitle": "IMU angular velocity",
+      "yAxisLabel": "rad/s",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": true,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "followingViewWidth": 60,
+      "sidebarDimension": 240
+    },
+    "Tab!hub": {
+      "activeTabIdx": 0,
+      "tabs": [
+        {
+          "title": "Robot and cameras",
+          "layout": {
+            "direction": "row",
+            "first": "3D!robot",
+            "second": {
+              "direction": "column",
+              "first": {
+                "direction": "row",
+                "first": "Image!cam1",
+                "second": "Image!cam1mono",
+                "splitPercentage": 50
+              },
+              "second": {
+                "direction": "row",
+                "first": "Image!cam2",
+                "second": "Image!cam2mono",
+                "splitPercentage": 50
+              },
+              "splitPercentage": 50.0
+            },
+            "splitPercentage": 55
+          }
+        },
+        {
+          "title": "System graph",
+          "layout": "Greenhouse.Subsystem graph!graph"
+        },
+        {
+          "title": "Odometry vs truth",
+          "layout": {
+            "direction": "row",
+            "first": {
+              "direction": "column",
+              "first": "Plot!x",
+              "second": {
+                "direction": "column",
+                "first": "Plot!y",
+                "second": "Plot!yaw",
+                "splitPercentage": 50.0
+              },
+              "splitPercentage": 33.333333333333336
+            },
+            "second": {
+              "direction": "column",
+              "first": "Plot!vx",
+              "second": "Plot!wz",
+              "splitPercentage": 50.0
+            },
+            "splitPercentage": 50
+          }
+        },
+        {
+          "title": "Odometry error",
+          "layout": {
+            "direction": "row",
+            "first": {
+              "direction": "column",
+              "first": "Plot!eplanar",
+              "second": {
+                "direction": "column",
+                "first": "Plot!ex",
+                "second": "Plot!ey",
+                "splitPercentage": 50.0
+              },
+              "splitPercentage": 33.333333333333336
+            },
+            "second": {
+              "direction": "column",
+              "first": "Plot!eyaw",
+              "second": {
+                "direction": "column",
+                "first": "Plot!evx",
+                "second": "Plot!ewz",
+                "splitPercentage": 50.0
+              },
+              "splitPercentage": 33.333333333333336
+            },
+            "splitPercentage": 50
+          }
+        },
+        {
+          "title": "IMU",
+          "layout": {
+            "direction": "column",
+            "first": "Plot!acc",
+            "second": "Plot!gyro",
+            "splitPercentage": 50.0
+          }
+        }
+      ]
+    },
+    "Greenhouse.Subsystem graph!graph": {
+      "subsystem": "drive"
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": "Tab!hub"
+}

@@ -1,0 +1,9 @@
+/generated/
+/runtime/
+/test-results/
+/.venv/
+__pycache__/
+*.pyc
+/graphify-out/
+/docs/map/*.delivery.json
+/.claude/worktrees/

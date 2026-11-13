@@ -1,0 +1,25 @@
+{
+  "units": "mm",
+  "bounds": [
+    [
+      -75.0,
+      -75.0,
+      0.0
+    ],
+    [
+      75.0,
+      75.0,
+      198.0
+    ]
+  ],
+  "triangles": 54496,
+  "deck_hole_pitch_mm": 120.0,
+  "deck_thread": "M5x0.8",
+  "rail_m4_pitch_mm": 17,
+  "rail_attachment_heights_mm": [
+    28,
+    166
+  ],
+  "print_clearance_mm": 0.4,
+  "status": "Prototype: measure deck origin and rail interfaces; not fit/load certified"
+}

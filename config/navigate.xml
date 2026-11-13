@@ -1,0 +1,25 @@
+<!-- Plan once, then replan only when the path becomes invalid or the goal changes (Nav2's
+     navigate_w_replanning_only_if_path_becomes_invalid.xml without selectors). The costmaps
+     hold only the static map, so a periodic replan learns nothing new: it restarts the path at
+     the robot, and after a corner cut each new path hugged the row-end plant more tightly
+     until its start fell inside the inflated footprint ("Start occupied") and Nav2 aborted. -->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="PlanAndControl">
+      <RateController hz="1.0">
+        <Fallback>
+          <ReactiveSequence>
+            <Inverter>
+              <GlobalUpdatedGoal/>
+            </Inverter>
+            <IsPathValid path="{path}"/>
+          </ReactiveSequence>
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"
+                             error_code_id="{compute_path_error_code}"/>
+        </Fallback>
+      </RateController>
+      <FollowPath path="{path}" controller_id="FollowPath"
+                  goal_checker_id="goal_checker" error_code_id="{follow_path_error_code}"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>

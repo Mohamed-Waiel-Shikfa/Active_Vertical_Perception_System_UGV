@@ -1,0 +1,6 @@
+{
+  "lidar": {
+    "enabled": false,
+    "update_rate_hz": 10.0
+  }
+}

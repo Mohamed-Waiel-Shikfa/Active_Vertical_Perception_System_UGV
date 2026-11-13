@@ -1,0 +1,1112 @@
+<title>How the Jackal Drives Itself</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one reading column (~68ch) beside a sticky contents rail; demos and diagrams run wider than the text. Same family as the technical walkthrough (navigation-stack.html). */
+:root{
+  --bg:#f5f6f1; --surface:#ffffff; --ink:#17231b; --muted:#56645a; --rule:#d5dbd2;
+  --leaf:#2b7a4b; --leaf-soft:#dcebe0; --amber:#b5651d; --amber-soft:#f3e2d2;
+  --plant:#5f8f52; --plant-soft:#cfe0c6; --probe:#6f8aa3; --soil:#ebe6da;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1511; --surface:#161e18; --ink:#e2e9e3; --muted:#9aa89e; --rule:#2c372f;
+  --leaf:#6cc08f; --leaf-soft:#1d3326; --amber:#e8995a; --amber-soft:#3a2818;
+  --plant:#87b67a; --plant-soft:#22331f; --probe:#8eaac4; --soil:#1c211c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1511; --surface:#161e18; --ink:#e2e9e3; --muted:#9aa89e; --rule:#2c372f;
+  --leaf:#6cc08f; --leaf-soft:#1d3326; --amber:#e8995a; --amber-soft:#3a2818;
+  --plant:#87b67a; --plant-soft:#22331f; --probe:#8eaac4; --soil:#1c211c; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:40px 96px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;font-size:13px}
+nav.toc b{display:block;font:600 12px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+nav.toc a{color:var(--muted);text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--leaf)}
+main{min-width:0}
+main>section{max-width:68ch}
+main>section.wide{max-width:none}
+.col{max-width:68ch}
+.eyebrow{font:600 12px/1.4 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--leaf);margin:0 0 14px}
+h1{font:700 clamp(36px,6vw,58px)/1.02 var(--f-display);letter-spacing:-.015em;margin:0 0 18px;text-wrap:balance}
+h2{font:600 28px/1.15 var(--f-display);margin:80px 0 14px;text-wrap:balance;scroll-margin-top:24px}
+h3{font:600 19px/1.3 var(--f-display);margin:32px 0 8px;letter-spacing:.01em;text-wrap:balance}
+p{margin:0 0 14px}
+a{color:var(--leaf)}
+.lede{font-size:20px;line-height:1.55;color:var(--muted);max-width:60ch}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--leaf-soft);padding:1px 5px;border-radius:3px}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
+
+/* The four-step summary: a real sequence, so it is numbered */
+.summary{list-style:none;counter-reset:s;margin:36px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;max-width:none}
+.summary li{counter-increment:s;border-top:2px solid var(--ink);padding-top:12px;min-width:0}
+.summary li::before{content:counter(s);display:block;font:600 13px/1 var(--f-mono);color:var(--leaf);margin-bottom:8px}
+.summary b{display:block;font:600 18px/1.2 var(--f-display);margin-bottom:6px}
+.summary span{font-size:14.5px;color:var(--muted);line-height:1.5;display:block}
+
+.aside{border-left:3px solid var(--leaf);background:var(--leaf-soft);padding:12px 16px;border-radius:0 4px 4px 0;margin:20px 0;font-size:15.5px}
+.aside.warn{border-color:var(--amber);background:var(--amber-soft)}
+.aside b:first-child{font-family:var(--f-display);letter-spacing:.02em}
+
+figure{margin:28px 0 32px;max-width:none}
+.fig{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:16px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:600px}
+figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;max-width:80ch;line-height:1.5}
+figcaption b{color:var(--ink);font-weight:600}
+
+/* Interactive demos */
+.demo{background:var(--surface);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.demo-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.demo-head .tag{font:600 11px/1 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--leaf)}
+.demo-head .hint{font-size:13px;color:var(--muted)}
+.demo canvas{display:block;width:100%;height:auto;cursor:crosshair;touch-action:manipulation;background:var(--soil)}
+.controls{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center;padding:12px 16px;border-top:1px solid var(--rule)}
+.ctl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.ctl>span:first-child{font:600 11px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase}
+.btn{font:600 14px/1 var(--f-display);letter-spacing:.03em;border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:4px;padding:9px 16px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn:hover{filter:brightness(1.12)}
+.btn.ghost:hover{border-color:var(--ink);filter:none}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.seg button{font:500 13px/1 var(--f-mono);background:transparent;color:var(--ink);border:0;padding:8px 10px;cursor:pointer;border-right:1px solid var(--rule)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--leaf);color:var(--bg)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:13px/1.2 var(--f-body);background:transparent;color:var(--ink);border:1px solid var(--rule);border-radius:999px;padding:6px 12px;cursor:pointer;text-align:left}
+.chip:hover{border-color:var(--leaf)}
+.chip .mono{color:var(--muted);margin-left:4px}
+input[type=range]{accent-color:var(--leaf);width:140px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0;border-top:1px solid var(--rule)}
+.readout div{padding:10px 16px;border-right:1px solid var(--rule);min-width:0}
+.readout div:last-child{border-right:0}
+.readout dt{font:600 10.5px/1 var(--f-display);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.readout dd{margin:0;font:500 15px/1.2 var(--f-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.status{padding:10px 16px;font-size:14px;border-top:1px solid var(--rule);min-height:42px}
+.status.bad{color:var(--amber)}
+.status.good{color:var(--leaf)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);padding:10px 16px;border-top:1px solid var(--rule)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+/* Tables and lists */
+.tbl{overflow-x:auto;margin:14px 0 22px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 11.5px/1.3 var(--f-display);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+td.n{white-space:nowrap}
+ol.steps{padding-left:24px;margin:0 0 18px}
+ol.steps li{margin-bottom:10px;padding-left:4px}
+ol.steps li::marker{font:600 14px var(--f-mono);color:var(--leaf)}
+ul.plain{padding-left:20px}
+ul.plain li{margin-bottom:8px}
+.rhythm{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0 8px;max-width:none}
+.rhythm div{border:1px solid var(--rule);border-radius:6px;padding:12px 14px;background:var(--surface);min-width:0}
+.rhythm .k{font:600 26px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.rhythm .k small{font-size:14px;color:var(--muted);font-weight:500}
+.rhythm .d{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
+.phases{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 20px;font-size:14px}
+.phases span{border:1px solid var(--rule);border-radius:4px;padding:5px 10px;background:var(--surface);font-family:var(--f-display);font-weight:600}
+.phases span.ok{border-color:var(--leaf);color:var(--leaf)}
+.phases span.no{border-color:var(--amber);color:var(--amber)}
+.phases em{color:var(--muted);font-style:normal}
+dl.gloss{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:10px 20px;margin:16px 0}
+dl.gloss dt{font:600 15px/1.4 var(--f-display)}
+dl.gloss dd{margin:0;color:var(--ink);font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:22px 0 10px;max-width:none}
+.stat{border-top:2px solid var(--leaf);padding-top:12px}
+.stat .k{font:600 30px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.stat .k small{font-size:15px;color:var(--muted);font-weight:500}
+.stat .d{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.45}
+footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--rule);font-size:13.5px;color:var(--muted);max-width:68ch}
+
+/* SVG classes, all from tokens */
+.s-box{fill:var(--surface);stroke:var(--ink);stroke-width:1.2}
+.s-nav{fill:var(--leaf-soft);stroke:var(--leaf);stroke-width:1.4}
+.s-gw{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.6}
+.s-group{fill:none;stroke:var(--leaf);stroke-width:1;stroke-dasharray:4 4}
+.s-t{fill:var(--ink);font:500 13px var(--f-body)}
+.s-ts{fill:var(--muted);font:12.5px var(--f-body)}
+.s-tm{fill:var(--muted);font:11.5px var(--f-mono)}
+.s-h{fill:var(--ink);font:600 15px var(--f-display)}
+.s-lead{fill:var(--leaf);font:600 11px var(--f-display);letter-spacing:.08em}
+.s-ar{stroke:var(--ink);stroke-width:1.4;fill:none}
+.s-fb{stroke:var(--leaf);stroke-width:1.5;fill:none;stroke-dasharray:6 4}
+.s-plant{fill:var(--plant-soft);stroke:var(--plant);stroke-width:1}
+.s-grow{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1;stroke-dasharray:3 3}
+.s-wall{stroke:var(--ink);stroke-width:3;fill:none}
+.s-floor{fill:var(--soil)}
+.s-robot{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+.s-dot{fill:var(--ink)}
+.s-grid{stroke:var(--rule);stroke-width:1}
+.s-old{stroke:var(--amber);stroke-width:2.2;fill:none}
+.s-new{stroke:var(--leaf);stroke-width:2.4;fill:none}
+.s-want{stroke:var(--ink);stroke-width:1.4;fill:none;stroke-dasharray:5 4}
+.s-dim{stroke:var(--muted);stroke-width:1;fill:none}
+
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr);gap:0}nav.toc{position:static;margin-bottom:28px}nav.toc ol{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}}
+@media (max-width:520px){dl.gloss{grid-template-columns:minmax(0,1fr);gap:2px}dl.gloss dd{margin-bottom:12px}.readout div{border-right:0;border-bottom:1px solid var(--rule)}h2{font-size:24px;margin-top:64px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <b>Contents</b>
+  <ol>
+    <li><a href="#world">The robot and its world</a></li>
+    <li><a href="#picture">The big picture</a></li>
+    <li><a href="#map">The map</a></li>
+    <li><a href="#planner">Planning a route</a></li>
+    <li><a href="#follower">Following the route</a></li>
+    <li><a href="#gateway">The gateway</a></li>
+    <li><a href="#parking">Parking</a></li>
+    <li><a href="#safety">Staying safe</a></li>
+    <li><a href="#results">How well it works</a></li>
+    <li><a href="#limits">What it can't do</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+    <li><a href="#code">Where it lives in the code</a></li>
+  </ol>
+</nav>
+
+<main>
+<section id="top">
+  <p class="eyebrow">Jackal greenhouse simulation · navigation from scratch</p>
+  <h1>How the Jackal drives itself</h1>
+  <p class="lede">You type a spot in the greenhouse and press Go. The robot works out a route between the tomato rows, drives it at the speed you chose, and parks on the spot facing the way you asked. This page explains how that works. It assumes no robotics background and no knowledge of the code.</p>
+</section>
+
+<section class="wide">
+  <ol class="summary">
+    <li><b>Know the map</b><span>The robot already knows where every plant and wall is. It keeps that knowledge as a grid of 5 cm squares.</span></li>
+    <li><b>Plan a route</b><span>A route planner searches the grid for the shortest route that keeps the robot's whole body clear of the plants.</span></li>
+    <li><b>Follow it</b><span>A path follower steers along the route 20 times a second, always aiming at a point a little way ahead.</span></li>
+    <li><b>Adapt and park</b><span>A program called the gateway corrects every command for how this robot really moves on soil, then takes over the last metre to park.</span></li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section id="world" class="wide">
+  <div class="col">
+  <h2>The robot and its world</h2>
+  <p>The robot is a <b>Clearpath Jackal</b>, a four-wheeled research robot about half a metre long. It carries a 1.5 m vertical lift with two cameras that can be raised and lowered to look at plants at different heights. That is what the wider research project is about. For navigation, the lift matters only because it makes the robot taller and slightly larger than the bare Jackal, so it must stay further from the leaves.</p>
+  <p>The robot lives in a simulated greenhouse, 18 m long and 10 m wide, run by a physics simulator called <b>Gazebo</b>. Inside are four rows of 17 tomato plants, each 1.4 m tall. The rows are 12 m long and 2 m apart, which leaves a 1.3 m clear aisle between neighbouring rows. Open strips at each end, called headlands, let the robot switch from one aisle to another. The soil is slightly bumpy and the wheels can slip, as they would on real ground.</p>
+  </div>
+  <figure>
+    <div class="fig"><svg id="overview" viewBox="0 0 940 560" role="img" aria-labelledby="ovT"><title id="ovT">Top view of the greenhouse with four plant rows, the aisles, the headlands, the robot's start position and the coordinate axes</title></svg></div>
+    <figcaption><b>The greenhouse from above, to scale.</b> Positions are given in metres from the centre. <b>X</b> runs along the rows and <b>Y</b> runs across them. The robot's heading (yaw) is an angle in degrees: 0° faces +X, 90° faces +Y, and positive angles turn counterclockwise. The robot starts at (−7.5, 0) facing 0°.</figcaption>
+  </figure>
+  <div class="col">
+  <h3>What you give it</h3>
+  <p>The control panel's Navigation box asks for three numbers: <b>X</b> and <b>Y</b> in metres, and <b>Rotation Z</b>, the heading in degrees you want the robot to face when it arrives. Two more settings come from the robot panel: <b>Drive</b>, the cruising speed in metres per second (up to 2.0), and <b>Turn</b>, how hard it may turn (up to 4.0, the same scale the arrow keys use). Press <b>Go</b> to start and <b>Cancel</b> to stop. Touching an arrow key or Stop also cancels the trip and gives you manual control back. The same request can come from a terminal with <code>nav_command.py go --x 4 --y 2 --yaw 180</code>.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="picture" class="wide">
+  <div class="col">
+  <h2>The big picture</h2>
+  <p>Think of a delivery driver with a satnav, in a car they have never driven before. The satnav holds a map and picks the roads. The driver's hands keep the car on those roads, moment to moment. Sitting next to them is an instructor who knows this car's habits: the steering is slow, the tyres slip, the brakes are soft. The instructor corrects every input before it reaches the car and parks it at the end.</p>
+  <p>The robot's navigation has the same parts. Most of them come from <b>Nav2</b>, free navigation software used on many real robots. Nav2 runs on <b>ROS 2</b>, a framework that lets separate programs on a robot send each other messages. The instructor is a program written for this project, called the <b>gateway</b>.</p>
+  </div>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 900 430" role="img" aria-labelledby="bpT">
+      <title id="bpT">How a goal flows from the operator through the gateway and Nav2 to the wheels, and how the measured position flows back</title>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink)"/></marker>
+        <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--leaf)"/></marker>
+      </defs>
+      <rect class="s-box" x="20" y="40" width="180" height="104" rx="6"/>
+      <text class="s-lead" x="34" y="62">YOU</text>
+      <text class="s-h" x="34" y="84">Control panel</text>
+      <text class="s-ts" x="34" y="104">where to go, which way</text>
+      <text class="s-ts" x="34" y="121">to face, how fast</text>
+      <text class="s-ts" x="34" y="138">(the satnav input)</text>
+
+      <rect class="s-gw" x="270" y="40" width="250" height="160" rx="8"/>
+      <text class="s-lead" x="286" y="62" style="fill:var(--amber)">WRITTEN FOR THIS PROJECT</text>
+      <text class="s-h" x="286" y="84">Gateway (the instructor)</text>
+      <text class="s-ts" x="286" y="106">checks every goal and command</text>
+      <text class="s-ts" x="286" y="124">adapts commands to how the</text>
+      <text class="s-ts" x="286" y="141">robot really moves on soil</text>
+      <text class="s-ts" x="286" y="159">parks the robot at the end</text>
+      <text class="s-ts" x="286" y="177">stops everything if in doubt</text>
+
+      <rect class="s-group" x="585" y="20" width="300" height="248" rx="8"/>
+      <text class="s-lead" x="600" y="42">NAV2 (STANDARD SOFTWARE)</text>
+      <rect class="s-nav" x="600" y="56" width="270" height="78" rx="6"/>
+      <text class="s-h" x="614" y="80">Route planner (the satnav)</text>
+      <text class="s-ts" x="614" y="100">searches the map for a route</text>
+      <text class="s-ts" x="614" y="118">once per goal, again if blocked</text>
+      <rect class="s-nav" x="600" y="172" width="270" height="80" rx="6"/>
+      <text class="s-h" x="614" y="196">Path follower (the hands)</text>
+      <text class="s-ts" x="614" y="216">picks speed and steering to</text>
+      <text class="s-ts" x="614" y="234">stay on the route, 20× a second</text>
+
+      <rect class="s-box" x="270" y="310" width="250" height="92" rx="6"/>
+      <text class="s-lead" x="286" y="332">STOCK CLEARPATH</text>
+      <text class="s-h" x="286" y="354">Wheel controllers</text>
+      <text class="s-ts" x="286" y="374">priority switch, then motor</text>
+      <text class="s-ts" x="286" y="391">speeds for each side</text>
+
+      <rect class="s-box" x="600" y="310" width="270" height="92" rx="6"/>
+      <text class="s-lead" x="614" y="332">GAZEBO</text>
+      <text class="s-h" x="614" y="354">Simulated world</text>
+      <text class="s-ts" x="614" y="374">physics: soil, wheels,</text>
+      <text class="s-ts" x="614" y="391">slip, plants, walls</text>
+
+      <line class="s-ar" x1="200" y1="92" x2="268" y2="92" marker-end="url(#ah)"/>
+      <text class="s-tm" x="212" y="84">goal</text>
+      <line class="s-ar" x1="520" y1="88" x2="598" y2="92" marker-end="url(#ah)"/>
+      <text class="s-tm" x="534" y="80">goal</text>
+      <line class="s-ar" x1="735" y1="134" x2="735" y2="170" marker-end="url(#ah)"/>
+      <text class="s-tm" x="744" y="157">route</text>
+      <line class="s-ar" x1="600" y1="212" x2="522" y2="168" marker-end="url(#ah)"/>
+      <text class="s-tm" x="530" y="214">motion it wants</text>
+      <line class="s-ar" x1="395" y1="200" x2="395" y2="308" marker-end="url(#ah)"/>
+      <text class="s-tm" x="404" y="250">adapted</text>
+      <text class="s-tm" x="404" y="265">command</text>
+      <line class="s-ar" x1="520" y1="356" x2="598" y2="356" marker-end="url(#ah)"/>
+      <path class="s-fb" d="M600 322 C 560 300 545 260 522 200" marker-end="url(#ahg)"/>
+      <text class="s-tm" x="548" y="300" style="fill:var(--leaf)">true position</text>
+      <text class="s-tm" x="548" y="314" style="fill:var(--leaf)">50× a second</text>
+      <line class="s-ar" x1="110" y1="144" x2="110" y2="356"/>
+      <line class="s-ar" x1="110" y1="356" x2="268" y2="356" marker-end="url(#ah)"/>
+      <text class="s-tm" x="120" y="300">arrow keys</text>
+      <text class="s-tm" x="120" y="315">(always win)</text>
+    </svg>
+    </div>
+    <figcaption><b>Who talks to whom.</b> Black arrows carry goals and commands. The dashed green arrow is the robot's true position and speed, read straight from the simulator. The gateway passes that position on to Nav2, so every part of the system works from where the robot really is.</figcaption>
+  </figure>
+  <div class="col">
+  <p>One detail here is unusual. A real robot has to <i>estimate</i> where it is, for example by counting wheel turns. On soil that drifts, because wheels slip. In this simulation the gateway reads the robot's exact position from the physics engine instead. That keeps the navigation honest about where the robot is, but it is also a simplification a real robot could not make (see <a href="#limits">What it can't do</a>).</p>
+  <h3>Everything happens in a loop</h3>
+  <p>Navigation is a set of loops running at different speeds. Faster loops handle small corrections and slower loops handle the big decisions.</p>
+  </div>
+  <div class="rhythm">
+    <div><div class="k">50<small>×/s</small></div><div class="d">the simulator reports the robot's position and speed</div></div>
+    <div><div class="k">20<small>×/s</small></div><div class="d">the path follower and gateway send a new speed and steering command</div></div>
+    <div><div class="k">1<small>×/s</small></div><div class="d">the planner finds the route again from where the robot is now</div></div>
+    <div><div class="k">4<small>×/s</small></div><div class="d">the gateway writes a status update that the panel shows</div></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="map" class="wide">
+  <div class="col">
+  <h2>The map: a grid of squares</h2>
+  <p>When the simulation starts, a script builds the map from the simulator's own collision shapes. These are the simple invisible shapes the physics engine uses to decide when things touch. Each tomato plant is a cylinder with a 0.35 m radius, and the walls are thin boxes. The script lays a grid of 5 cm squares over the greenhouse floor and marks every square as free or blocked. Ground steeper than 12° would also be marked blocked. No camera image is involved: the robot is told the map, it does not see it.</p>
+  <h3>How big is the robot?</h3>
+  <p>The same script measures the robot from its 3D model, including the lift at every height and the cameras at every angle. Everything fits inside a rectangle 0.56 m long and 0.48 m wide, which already includes a 2.5 cm safety margin. The planner simplifies that rectangle to the smallest circle that contains it (radius 0.368 m), then adds 2.0 cm of padding, for a <b>planning radius of 0.396 m</b>. The padding covers the gaps between the moments when the path follower checks for collisions.</p>
+  <h3>A trick: grow the obstacles, shrink the robot</h3>
+  <p>Checking a robot-sized circle against every plant at every step is slow. A standard trick avoids it. Grow every obstacle outwards by the robot's radius, and treat the robot as a single point. If the point stays out of the grown obstacles, the real robot stays clear of the real ones.</p>
+  </div>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 900 300" role="img" aria-labelledby="growT">
+      <title id="growT">Left: a robot-sized circle near two plants. Right: the same plants grown by the robot's radius, with the robot as a point</title>
+      <g id="growFig"></g>
+    </svg>
+    </div>
+    <figcaption><b>Both pictures ask the same question.</b> On the left, does the robot's circle overlap a plant? On the right, is the robot's centre point inside a grown plant? In a 1.3 m aisle the grown plants leave only a 0.47 m strip down the middle where the robot's centre may go, drawn to scale here.</figcaption>
+  </figure>
+  <div class="col">
+  <h3>A price for getting close</h3>
+  <p>A route that grazes the leaves would be legal but unwise. So each free square also gets a price, called its <b>cost</b>, that rises the closer it is to a plant or wall. Right at the edge of the grown obstacles the cost is 252; it falls away quickly with distance and reaches zero 0.6 m from an obstacle. Robotics people call this <b>inflation</b>. The planner adds these prices to the distance it travels, so routes drift to the middle of each aisle where the price is lowest.</p>
+  <h3>When the prices are wrong, the route is wrong</h3>
+  <p>A good example of how much this matters happened while tuning the system. The cost used to reach zero 0.7 m from an obstacle. An inner aisle is 1.3 m wide, so its centre line is 0.65 m from the plants on each side. That is inside 0.7 m, so even the best line through an inner aisle carried a price. The planner treated each inner aisle as if it were 1.8 times its real length. The two outer aisles, between the last row and the side walls, are wider (1.6 m), so their centre lines were free.</p>
+  <p>The result: asked to drive straight down the centre aisle from the start to (6.5, 0), a 14 m trip, the robot took a 21.7 m detour down an outer aisle, because by the planner's prices the detour was cheaper. The fix makes the inflation distance depend on the layout: it is set just under half the width of the narrowest aisle (0.6 m here). Every aisle's centre line is now free, and the planner chooses between aisles on length alone.</p>
+  </div>
+  <figure>
+    <div class="fig"><svg viewBox="0 0 900 320" role="img" aria-labelledby="xsT"><title id="xsT">Cost across the width of the greenhouse at x = 0, for the old 0.7 m and current 0.6 m inflation distance</title><g id="xsec"></g></svg></div>
+    <figcaption><b>Price of each position across the greenhouse</b>, sliced through the middle (x = 0). Plants and walls are the shaded blocks. With the old 0.7 m setting (amber) the bottom of every inner aisle sits at a price of 99, while the outer aisles reach zero. With the current 0.6 m setting (green) all five aisles have a free centre line. You can try both settings in the demo below.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section id="planner" class="wide">
+  <div class="col">
+  <h2>Planning a route</h2>
+  <p>The planner is Nav2's <b>Smac Planner 2D</b>, which uses a classic search method called <b>A*</b> (say "A-star"). It works on the grid of squares like this:</p>
+  <ol class="steps">
+    <li>Start at the robot's square. From any square the robot may step to its 8 neighbours. A step costs its length multiplied by <span class="mono">1 + 2 × price / 252</span>, so a step through a free square costs exactly its length and a step next to a plant costs up to three times as much.</li>
+    <li>Keep a list of squares reached so far. Each one gets a score: the cost of the cheapest way found to reach it, plus the straight-line distance from it to the goal. The straight-line part is an optimistic guess at the cost still to come.</li>
+    <li>Repeatedly take the square with the lowest score and look at its neighbours. Because of the guess, the search spreads towards the goal instead of in every direction, and it still finds the cheapest route.</li>
+    <li>When the goal square comes up, trace back the chain of steps that led to it. That chain is the route. A smoothing pass turns its grid zigzags into gentle curves.</li>
+  </ol>
+  <p>The planner runs once per goal. It runs again only if the route becomes blocked or the goal changes; the path follower steers the robot back if it drifts. (It used to replan every second from wherever the robot was. After the robot cut a row-end corner, each new route started inside the bend and hugged the plant a little more, until the robot was too close to plan from at all.) It plans positions only. The heading you asked for at the goal is handled separately, by <a href="#parking">parking</a>.</p>
+  </div>
+
+  <figure id="play">
+    <div class="demo">
+      <div class="demo-head"><span class="tag">Try it</span><span class="hint">Click anywhere on the floor to set a goal, pick the heading, then press Drive.</span></div>
+      <canvas id="pgCanvas" aria-label="Greenhouse map. Click to set a navigation goal." style="aspect-ratio:18.8/10.8"></canvas>
+      <div class="controls">
+        <div class="ctl"><span>Goal heading</span><div class="seg" id="pgHeading" role="group" aria-label="Goal heading"><button data-v="0" aria-pressed="true">0°</button><button data-v="90" aria-pressed="false">90°</button><button data-v="180" aria-pressed="false">180°</button><button data-v="-90" aria-pressed="false">−90°</button></div></div>
+        <div class="ctl"><span>Drive</span><input type="range" id="pgDrive" min="0.5" max="2" step="0.1" value="2" aria-label="Drive speed in metres per second"><span class="mono num" id="pgDriveV">2.0 m/s</span></div>
+        <div class="ctl"><span>Inflation</span><div class="seg" id="pgInfl" role="group" aria-label="Planner inflation distance"><button data-v="0.6" aria-pressed="true">0.6 m (current)</button><button data-v="0.7" aria-pressed="false">0.7 m (old)</button></div></div>
+      </div>
+      <div class="controls">
+        <div class="ctl"><span>Examples</span><div class="chips">
+          <button class="chip" data-g="6.5,0,0">End of the centre aisle <span class="mono">(6.5, 0, 0°)</span></button>
+          <button class="chip" data-g="4,2,180">Next aisle, facing back <span class="mono">(4, 2, 180°)</span></button>
+          <button class="chip" data-g="0,-2,0">Reverse into a spot <span class="mono">(0, −2, 0°)</span></button>
+        </div></div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="pgGo">Drive</button>
+        <button class="btn ghost" id="pgReset">Back to start</button>
+        <span class="hint" style="font-size:12.5px;color:var(--muted)">Playback runs at twice simulated speed.</span>
+      </div>
+      <dl class="readout">
+        <div><dt>Phase</dt><dd id="pgPhase">Route planned</dd></div>
+        <div><dt>Route length</dt><dd id="pgLen">–</dd></div>
+        <div><dt>Squares searched</dt><dd id="pgExp">–</dd></div>
+        <div><dt>Speed</dt><dd id="pgSpeed">0.00 m/s</dd></div>
+        <div><dt>Sim time</dt><dd id="pgTime">0.0 s</dd></div>
+      </dl>
+      <div class="status" id="pgStatus" role="status"></div>
+      <div class="legend">
+        <span><i style="background:var(--plant-soft);border:1px solid var(--plant)"></i>plant</span>
+        <span><i style="background:var(--rule)"></i>too close for the robot's centre</span>
+        <span><i style="background:var(--leaf);opacity:.45"></i>price for being close</span>
+        <span><i style="background:var(--probe);opacity:.5"></i>squares the search looked at</span>
+        <span><i style="background:var(--ink);height:3px;vertical-align:3px"></i>route</span>
+        <span><i style="border:1.5px solid var(--leaf);border-radius:50%"></i>lookahead and carrot</span>
+      </div>
+    </div>
+    <figcaption><b>A working model of the planner and the driving rules</b>, using the real greenhouse layout, planning radius, prices and search method. The robot here is idealised: it turns and accelerates exactly as asked. The next sections explain why the real one doesn't, and what the gateway does about it. Switch Inflation to the old 0.7 m and try the first example to reproduce the detour.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section id="follower" class="wide">
+  <div class="col">
+  <h2>Following the route: chasing a carrot</h2>
+  <p>A route is just a line on the map. Something has to turn it into "drive at this speed and turn this hard" twenty times a second. Nav2's <b>Regulated Pure Pursuit</b> path follower does that, and its main idea is old and simple. Imagine dangling a carrot on a stick in front of the robot. The robot picks the point on the route a fixed distance ahead of it, called the <b>lookahead</b> distance, and drives the circular arc that would carry it to that point. A twentieth of a second later it has moved, so it picks a new carrot and a new arc. The result is a smooth curve that keeps pulling the robot back onto the route.</p>
+  <p>Its rules in this setup:</p>
+  <ul class="plain">
+    <li>The lookahead is the distance the robot covers in 1.5 seconds at its current speed, kept between 0.6 and 3 m. Slow robot, near carrot. Fast robot, far carrot.</li>
+    <li>If the carrot is more than about 29° (0.5 radians) to one side, the robot stops and turns on the spot to face it before driving on.</li>
+    <li>It slows down on arcs tighter than 2 m radius and as it nears the end of the route.</li>
+    <li>Before every move it projects the robot's outline 1.5 seconds along the planned motion. If that would touch an obstacle, it refuses to move.</li>
+  </ul>
+  <p>The lookahead distance is a trade-off. Try it:</p>
+  </div>
+  <figure>
+    <div class="demo">
+      <div class="demo-head"><span class="tag">Try it</span><span class="hint">Change the lookahead, then press Play. The robot drives at 1 m/s round a row end.</span></div>
+      <canvas id="ppCanvas" aria-label="Robot following a hairpin route around the end of a plant row" style="aspect-ratio:7.6/4.6"></canvas>
+      <div class="controls">
+        <div class="ctl"><span>Lookahead</span><input type="range" id="ppL" min="0.25" max="3" step="0.05" value="1" aria-label="Lookahead distance in metres"><span class="mono num" id="ppLV">1.00 m</span></div>
+        <button class="btn" id="ppPlay">Play</button>
+      </div>
+      <dl class="readout">
+        <div><dt>Overshoot on the straight</dt><dd id="ppOver">–</dd></div>
+        <div><dt>Closest gap to a plant</dt><dd id="ppGap">–</dd></div>
+      </dl>
+      <div class="status" id="ppStatus" role="status"></div>
+    </div>
+    <figcaption><b>Too short, and the robot over-steers</b>: the carrot is so close that every small error looks large, and because this robot responds about half a second late (modelled here) it swings past the line. <b>Too long, and it cuts corners</b>: at a row end the carrot is already round the bend, so the robot heads straight for it and clips the end plant. At this demo's 1 m/s, around 1 m works well. What really matters is how many seconds ahead the carrot is, so the real robot, which takes row ends at under 0.5 m/s, uses about 0.6 m there.</figcaption>
+  </figure>
+  <div class="col">
+  <p>Now remember the rule above: lookahead grows with speed. At the full 2 m/s it stretches to 3 m, which is smooth and steady on a long straight aisle and cuts every row end. That exact problem happened. The fix lives in the gateway, which slows the robot before each bend so the lookahead shrinks by the time it gets there. A second version of the same problem showed up later: at the tightest row end (a U-turn about 0.95 m around the end plant) even the old 1 m minimum lookahead was too long. The robot crept about 15 cm inside the route and ended up too close to the plant to plan from. Now the lookahead can shrink to 0.6 m, and bends are taken slowly enough that 1.5 s of driving stays inside 70% of the bend's radius. That's the next section.</p>
+  <div class="aside"><b>Why this follower?</b> An earlier version used a different Nav2 follower (MPPI), which samples many possible motions and scores them. It settled at about 1 m/s whatever the speed limit was set to. Pure pursuit has an explicit cruising speed, so the panel's Drive setting means what it says.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="gateway" class="wide">
+  <div class="col">
+  <h2>The gateway: a translator for a robot that slides</h2>
+  <p>The Jackal has no steering wheel. Its two left wheels are driven together and its two right wheels are driven together. To turn, it runs one side faster than the other, and the tyres have to scrape sideways across the ground. This is called <b>skid steering</b>, the same way a tank or a small digger turns. On soil, scraping is unpredictable. These were measured in the simulation:</p>
+  </div>
+  <div class="tbl" style="max-width:900px"><table>
+    <thead><tr><th>Ask for this</th><th>What actually happens</th></tr></thead>
+    <tbody>
+      <tr><td>Turn on the spot at 1 rad/s (about 57° a second)</td><td>It turns at about 0.28 rad/s, roughly a quarter of the request.</td></tr>
+      <tr><td>Start turning now</td><td>The turn starts about half a second later.</td></tr>
+      <tr><td>Go from standstill to full speed (2 m/s) at once</td><td>The wheels spin. While they spin the robot can't steer at all: a full turn command produced almost no turn.</td></tr>
+      <tr><td>Spin half a turn (180°) on the spot</td><td>It slides sideways 4 to 24 cm. Faster spins slide less.</td></tr>
+      <tr><td>Drive straight at cruising speed</td><td>It goes about 7% slower than the wheels are turning.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="col">
+  <p>Nav2 assumes the robot does what it is told. This robot doesn't. The gateway sits between them and is the only program allowed to send navigation commands to the wheels. Every command from the path follower passes through these steps, in this order:</p>
+  <ol class="steps">
+    <li><b>Check it.</b> Throw away any command more than 0.35 s old. If the follower ever asks for a speed outside the allowed range, stop and report an error.</li>
+    <li><b>Near the goal?</b> Hand over to <a href="#parking">parking</a>.</li>
+    <li><b>Slow down for what's ahead.</b> Before the trip, the gateway works out a safe speed for every point on the route from how sharp the bend is there (keeping sideways acceleration under 0.8 m/s² and turning under 0.47 rad/s, which keeps the lookahead within 70% of the bend's radius), and lets the robot brake at 1.2 m/s² into each slower point. While driving, it applies the lowest of those limits anywhere within the current lookahead distance, so the robot is already slow when the carrot reaches a bend. It also brakes for the goal, but never below 0.15 m/s, the push the robot needs to keep moving.</li>
+    <li><b>Don't floor it.</b> Never ask for more than 0.5 m/s above the speed the robot is actually doing, so the wheels keep their grip and the robot can still steer.</li>
+    <li><b>Cruise control.</b> Add a small correction, at most 0.2 m/s either way, to hold the planned speed despite slip.</li>
+    <li><b>Exaggerate the steering.</b> Divide the wanted turn by 0.28, so the robot is asked for about 3.6 times as much, and add extra in proportion to the gap between the wanted and measured turn to make up for the half-second delay. The 0.28 figure is re-estimated during every trip from steady turns along the route (not while parking), so it adapts if the ground changes.</li>
+    <li><b>Respect your limit.</b> Never send a turn command above the panel's Turn setting (at most 4.0, the controller's maximum). Navigation never turns harder than the arrow keys would.</li>
+  </ol>
+  <p>When steps 3 and 4 lower the speed, they lower the turn by the same proportion, so the robot still drives the same arc, only slower.</p>
+  </div>
+  <figure style="max-width:900px">
+    <div class="fig"><svg viewBox="0 0 900 330" role="img" aria-labelledby="turnT"><title id="turnT">Turn rate over three seconds after asking for 1 rad/s: the plain command reaches about 0.28, the gateway's command reaches 1.0</title><g id="turnChart"></g></svg></div>
+    <figcaption><b>Asking for a 1 rad/s turn, with and without the gateway.</b> A simple model of the base using the measured numbers (a quarter of the request, half a second late). Sent as is, the request produces a slow, weak turn. The gateway sends a much larger command, up to the 4.0 maximum at first, and the robot reaches the turn rate the follower wanted.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section id="parking" class="wide">
+  <div class="col">
+  <h2>Parking: the last 70 cm</h2>
+  <p>The planner ignores heading, so the robot often arrives facing the wrong way. Ask for (0, −2) facing 0° when the route arrives from the east, and the robot turns up facing 180°, the opposite way. It has to turn around near the goal. Turning on the spot makes this robot slide, so a turn right at the goal would leave it up to 24 cm off. The gateway handles the finish itself:</p>
+  <ol class="steps">
+    <li><b>Stop short.</b> If the goal heading is more than 29° away from the direction the route arrives in, the gateway brakes so the robot stops before the goal: about 0.7 m before it when the goal faces back the way the route came, closer (down to about 15 cm) when the goal faces sideways, so that the turn never leaves the robot more than 15 cm to the side of where it has to drive. A sideways goal turned 0.7 m early would have to swing across the aisle into the plants.</li>
+    <li><b>Take over.</b> It cancels the Nav2 trip. Nav2 would otherwise keep collision-checking motions that are no longer being carried out, and abort.</li>
+    <li><b>Turn to the goal heading</b> on the spot, at the full Turn rate, because faster turns slide less.</li>
+    <li><b>Drive onto the spot</b>, forwards or in reverse, whichever way the spot lies, using a classic parking controller from robotics textbooks (Siegwart et al., <i>Introduction to Autonomous Mobile Robots</i>). It steers using three numbers: how far away the spot is, the angle to it, and how much the heading still has to change. That removes the sideways slide from the turn with a gentle S-shaped move.</li>
+    <li><b>Final small turn</b> if the heading is still slightly off.</li>
+    <li><b>Settle and check.</b> Wait until the robot is truly still (under 2 cm/s), then check the measured position is within 7.5 cm and the heading within 4°. Only then is the goal reported as reached.</li>
+  </ol>
+  <p>If the robot arrives already facing roughly the right way, it skips the stop-short and the turn, drives to within 7.5 cm, and finishes with a small turn. While parking, Nav2's collision check is off, so the gateway does its own: if the robot ever gets closer to a plant or wall than its own body radius, it stops with an error.</p>
+  </div>
+  <figure>
+    <div class="demo">
+      <div class="demo-head"><span class="tag">Try it</span><span class="hint">Click to place the robot after its turn, near the spot. Then press Park.</span></div>
+      <canvas id="dkCanvas" aria-label="Parking demonstration. Click to place the robot near the goal spot." style="aspect-ratio:3.2/1.5"></canvas>
+      <div class="controls"><button class="btn" id="dkPlay">Park</button><span class="hint" style="font-size:12.5px;color:var(--muted)">Starting position shown is from a real test run.</span></div>
+      <dl class="readout">
+        <div><dt>Direction</dt><dd id="dkDir">–</dd></div>
+        <div><dt>Time to park</dt><dd id="dkTime">–</dd></div>
+        <div><dt>Final turn needed</dt><dd id="dkTurn">–</dd></div>
+      </dl>
+    </div>
+    <figcaption><b>The real parking controller</b> (same equations, gains and limits as the gateway) on an idealised robot. The dashed outline is the goal: facing right, at the centre. The default start is from a recorded test: after turning round, the robot was 0.65 m past the spot and 7 cm to the side. It reversed onto the spot and finished 7 cm and 2° from the goal. Start points are limited to 30 cm either side of the line, about the most a turn slides the robot. From a mostly sideways start the S-move ends with a larger heading error, which the final turn removes.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section id="safety">
+  <h2>Staying safe</h2>
+  <p>Several things can command the wheels: navigation, the keyboard, a joystick, and emergency stops. A stock Clearpath component called <b>twist_mux</b> is a priority switch that lets only the highest-priority active source through. Navigation was added at the lowest priority (1). The keyboard is 2, a joystick 10, and safety locks 253 to 255. Pressing an arrow key or Stop takes control immediately and cancels the goal.</p>
+  <p>A trip goes through these phases, shown on the panel:</p>
+  <div class="phases"><span>Ready</span><em>→</em><span>Planning</span><em>→</em><span>Navigating</span><em>→</em><span class="ok">Succeeded</span><em>or</em><span class="no">Canceled</span><em>or</em><span class="no">Error</span></div>
+  <p>Before a trip starts, the gateway refuses goals that are inside or too close to an obstacle. If the robot itself is too close to a plant to plan from or to turn on the spot, but not touching it, it first creeps straight forwards or backwards (whichever way has more room on the map, at most 30 cm) until it has about 10 cm to spare, then plans. If it still can't plan, it asks you to drive it back into open space. During a trip it stops the robot and reports an error if:</p>
+  <ul class="plain">
+    <li>position updates are late (older than 0.12 s of simulated time or 1.5 s of real time);</li>
+    <li>any Nav2 program stops running;</li>
+    <li>a command is outside the trip's speed limits;</li>
+    <li>the trip takes longer than 180 simulated seconds or 900 real seconds;</li>
+    <li>the robot gets too close to a plant or wall while parking.</li>
+  </ul>
+  <p>There are no automatic recovery moves, such as backing up blindly when stuck. Near crops, the robot stops and waits for a person. Changing the terrain or wheel-contact settings cancels the trip, waits until the robot has been still for half a simulated second, and rebuilds the map; you press Go again afterwards.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="results" class="wide">
+  <div class="col">
+  <h2>How well it works</h2>
+  <p>Results from automated test runs without the graphical window, at Drive 2.0 m/s and Turn 4.0. Times are in <i>simulated</i> seconds: on a laptop the simulation runs slower than real time, so a real clock would show longer.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">1.9<small> m/s</small></div><div class="d">top speed down a 13 m aisle (an earlier version was capped at 0.22)</div></div>
+    <div class="stat"><div class="k">7/7</div><div class="d">goals reached in the final test loop, each within 7.1 cm and 3.3°, two of them reverse parks</div></div>
+    <div class="stat"><div class="k">1.02<small>×</small></div><div class="d">planned route length compared with the shortest safe route, averaged over 14 trips (worst 1.09×)</div></div>
+    <div class="stat"><div class="k">3/3</div><div class="d">acceptance tests pass: route round an obstacle row, safety stops, terrain change mid-trip</div></div>
+  </div>
+  <div class="tbl" style="max-width:900px"><table>
+    <thead><tr><th>Trip</th><th>First version</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>Straight run down a 13 m aisle</td><td class="n">19.8 s</td><td class="n">10 to 12 s</td></tr>
+      <tr><td>Turn round, then drive 9.5 m</td><td class="n">89 s</td><td class="n">12 to 16 s</td></tr>
+      <tr><td>Across the aisles with two turnarounds, about 18 m, including parking</td><td class="n">122 to 132 s</td><td class="n">25 to 31 s</td></tr>
+      <tr><td>Drive set to 0.5 m/s</td><td class="n">held at 0.22 m/s</td><td class="n">0.50 to 0.52 m/s</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="limits">
+  <h2>What it can't do</h2>
+  <ul class="plain">
+    <li><b>It can't see.</b> The map is fixed when the simulation starts. A box or a person in an aisle that is not part of the simulated greenhouse would not be noticed. A real robot would need sensors such as cameras or a laser scanner feeding obstacles into the map.</li>
+    <li><b>It is told where it is.</b> The position comes straight from the simulator. A real robot must estimate its own position, which robotics calls localisation, and on slippery soil that is a hard problem in its own right.</li>
+    <li><b>The slip numbers were measured on the default soil.</b> The turning factor adapts by itself during each trip. The others (traction limit, the half-second delay, slide while spinning) would need measuring again for different soil or for a real Jackal.</li>
+    <li><b>Heading is not planned.</b> A goal that faces against the direction of arrival always costs a stop, a turn and a park, about 10 to 20 simulated seconds. A planner that also plans heading (Nav2's Smac Lattice planner) could avoid that, at a higher computing cost.</li>
+    <li><b>Very little automatic recovery.</b> The only one is the short straight creep away from a plant when you press Go. Anything harder needs a person to drive the robot back into open space. This is deliberate: no blind motion near crops.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="glossary">
+  <h2>Glossary</h2>
+  <dl class="gloss">
+    <dt>A*</dt><dd>A search method that finds the cheapest route through a grid by always exploring the most promising square next.</dd>
+    <dt>Cost, inflation</dt><dd>The price the planner pays for passing close to an obstacle. Inflation is the band around each obstacle where that price is above zero.</dd>
+    <dt>Costmap</dt><dd>The grid map with a price on every square.</dd>
+    <dt>Gazebo</dt><dd>The physics simulator that runs the greenhouse, the robot and its wheels.</dd>
+    <dt>Gateway</dt><dd>This project's program between Nav2 and the wheels. It checks and adapts every command, parks the robot and enforces the safety stops. File: <code>tools/navigation_gateway.py</code>.</dd>
+    <dt>Headland</dt><dd>The open strip at each end of the rows where the robot can cross between aisles.</dd>
+    <dt>Lookahead</dt><dd>How far ahead along the route the path follower aims (the carrot).</dd>
+    <dt>Nav2</dt><dd>The standard open-source navigation software for ROS 2. Here it supplies the route planner and the path follower.</dd>
+    <dt>Pose</dt><dd>Position plus heading: X, Y and yaw.</dd>
+    <dt>Rad/s</dt><dd>Radians per second, a unit of turning speed. 1 rad/s is about 57° per second; a full turn is 6.28 radians.</dd>
+    <dt>Regulated Pure Pursuit</dt><dd>Nav2's path follower used here: chase a point a set distance ahead, slowing for tight bends and near the end.</dd>
+    <dt>ROS 2</dt><dd>Robot Operating System 2, a framework that lets separate programs on a robot exchange messages.</dd>
+    <dt>Simulated time</dt><dd>The simulator's own clock. When the computer can't keep up, simulated time runs slower than real time; timings on this page use it.</dd>
+    <dt>Skid steering</dt><dd>Turning by driving the left and right wheels at different speeds, so the tyres scrape sideways. Tanks and small diggers work this way.</dd>
+    <dt>Smac Planner 2D</dt><dd>Nav2's grid route planner used here, based on A*.</dd>
+    <dt>twist_mux</dt><dd>A priority switch that decides which source of driving commands reaches the wheels. "Twist" is ROS's name for a speed-and-turn command.</dd>
+    <dt>Yaw, heading</dt><dd>The direction the robot faces, as an angle measured counterclockwise from the +X axis.</dd>
+  </dl>
+</section>
+
+<!-- ============================================================ -->
+<section id="code" class="wide">
+  <div class="col">
+  <h2>Where it lives in the code</h2>
+  <p>For anyone who wants to read further. Paths are relative to the <code>jackal-greenhouse-sim</code> folder.</p>
+  </div>
+  <div class="tbl" style="max-width:900px"><table>
+    <thead><tr><th>File</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>native/JackalControls.qml</code></td><td>The control panel, including the Navigation box (X, Y, Rotation Z, Go, Cancel).</td></tr>
+      <tr><td><code>tools/navigation_gateway.py</code></td><td>The gateway: accepts goals, shapes every command, parks, runs the safety checks, and serves go / cancel / status on <code>127.0.0.1:8765</code> inside the container.</td></tr>
+      <tr><td><code>greenhouse/speed_profile.py</code></td><td>Works out the safe speed at every point of a route (step 3 of the gateway).</td></tr>
+      <tr><td><code>greenhouse/navigation_map.py</code></td><td>Builds the grid map from collision shapes, measures the robot's footprint and padding, and sets the 0.6 m inflation from the aisle width.</td></tr>
+      <tr><td><code>tools/prepare_navigation.py</code></td><td>Runs at startup: builds the map and adds navigation to twist_mux at the lowest priority.</td></tr>
+      <tr><td><code>config/navigation.yaml</code></td><td>Nav2 settings: planner, path follower, maps and goal tolerances.</td></tr>
+      <tr><td><code>config/navigate.xml</code></td><td>Nav2's behaviour tree: plan once, follow the route, replan only if the route becomes blocked or the goal changes; no recovery moves.</td></tr>
+      <tr><td><code>native/Systems.cc</code></td><td>Simulator plugin that publishes the robot's true position and speed 50 times a second.</td></tr>
+      <tr><td><code>tools/nav_command.py</code></td><td>Send a goal, cancel or ask for status from a terminal.</td></tr>
+      <tr><td><code>tools/verify_navigation.py</code></td><td>The acceptance tests (obstacle route, safety stops, terrain change).</td></tr>
+      <tr><td><code>navigation-trace.jsonl</code></td><td>Written at runtime in the setup folder: every goal, re-plan, position and command of every trip.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="col">
+  <p>The full technical walkthrough, with every parameter and the measurements behind it, is in <code>docs/navigation-stack.html</code>.</p>
+  </div>
+</section>
+
+<footer>jackal-greenhouse-sim · Nav2 Jazzy · Gazebo Harmonic · navigation as of October 2026. The interactive demos are simplified models built from the real layout, settings and equations; the measured results come from the real simulation.</footer>
+</main>
+</div>
+
+<script>
+"use strict";
+/* ---------- Shared model of the greenhouse and the navigation pieces ---------- */
+const NAV=(()=>{
+  const RES=.05,X0=-9,Y0=-5,NX=360,NY=200,ROWS=[-3,-1,1,3],PLANT_R=.35,PLANT_X=[];
+  for(let k=0;k<=16;k++)PLANT_X.push(-6+.75*k);
+  const WALL_X=8.96,WALL_Y=4.96,R_PLAN=.396,R_BODY=.368;
+  function clearance(x,y){
+    let d=Math.min(WALL_X-Math.abs(x),WALL_Y-Math.abs(y));
+    for(const ry of ROWS){
+      if(Math.abs(y-ry)-PLANT_R>d)continue;
+      const k=Math.max(0,Math.min(16,Math.round((x+6)/.75)));
+      for(const kk of [k-1,k,k+1]){if(kk<0||kk>16)continue;d=Math.min(d,Math.hypot(x-PLANT_X[kk],y-ry)-PLANT_R)}
+    }
+    return d;
+  }
+  const dist=new Float32Array(NX*NY);
+  for(let j=0;j<NY;j++)for(let i=0;i<NX;i++)dist[j*NX+i]=clearance(X0+(i+.5)*RES,Y0+(j+.5)*RES);
+  const priceAt=(d,infl,k=4)=>d<R_PLAN?253:d<=infl?252*Math.exp(-k*(d-R_PLAN)):0;
+  function costGrid(infl){const c=new Float32Array(NX*NY);for(let n=0;n<c.length;n++)c[n]=priceAt(dist[n],infl);return c}
+  const cell=(x,y)=>[Math.floor((x-X0)/RES),Math.floor((y-Y0)/RES)];
+  const centre=(i,j)=>[X0+(i+.5)*RES,Y0+(j+.5)*RES];
+  function astar(cost,sx,sy,gx,gy,m=2){
+    const [si,sj]=cell(sx,sy),[gi,gj]=cell(gx,gy),N=NX*NY;
+    const g=new Float64Array(N).fill(Infinity),from=new Int32Array(N).fill(-1),closed=new Uint8Array(N),order=[],heap=[];
+    const push=(f,n)=>{heap.push([f,n]);let i=heap.length-1;while(i>0){const p=(i-1)>>1;if(heap[p][0]<=heap[i][0])break;[heap[p],heap[i]]=[heap[i],heap[p]];i=p}};
+    const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let i=0;for(;;){const l=2*i+1,r=l+1;let s=i;if(l<heap.length&&heap[l][0]<heap[s][0])s=l;if(r<heap.length&&heap[r][0]<heap[s][0])s=r;if(s===i)break;[heap[s],heap[i]]=[heap[i],heap[s]];i=s}}return top};
+    const s=sj*NX+si,goal=gj*NX+gi;
+    if(cost[goal]>=253)return null;
+    g[s]=0;push(0,s);
+    const D=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
+    while(heap.length){
+      const [,n]=pop();if(closed[n])continue;closed[n]=1;order.push(n);if(n===goal)break;
+      const i=n%NX,j=(n/NX)|0;
+      for(const [di,dj,l] of D){
+        const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=NX||jj>=NY)continue;
+        const nn=jj*NX+ii;if(closed[nn]||cost[nn]>=253)continue;
+        const ng=g[n]+l*RES*(1+m*cost[nn]/252);
+        if(ng<g[nn]){g[nn]=ng;from[nn]=n;push(ng+Math.hypot((ii-gi)*RES,(jj-gj)*RES),nn)}
+      }
+    }
+    if(from[goal]<0&&goal!==s)return null;
+    const pts=[];for(let n=goal;n>=0;n=from[n])pts.push(centre(n%NX,(n/NX)|0));
+    pts.reverse();pts[0]=[sx,sy];pts[pts.length-1]=[gx,gy];
+    return {pts,order};
+  }
+  function smooth(pts,cost,it=100,wd=.2,ws=.3){
+    const p=pts.map(q=>q.slice());
+    for(let t=0;t<it;t++)for(let i=1;i<p.length-1;i++)for(const a of [0,1]){
+      const old=p[i][a];p[i][a]+=wd*(pts[i][a]-p[i][a])+ws*(p[i-1][a]+p[i+1][a]-2*p[i][a]);
+      const [ci,cj]=cell(p[i][0],p[i][1]);if(cost[cj*NX+ci]>=253)p[i][a]=old;
+    }
+    return p;
+  }
+  const length=pts=>pts.slice(1).reduce((s,q,i)=>s+Math.hypot(q[0]-pts[i][0],q[1]-pts[i][1]),0);
+  /* greenhouse/speed_profile.py (stop=False, as the gateway calls it) */
+  function speedProfile(points,lat=.8,turn=1,brake=1.2,stride=10){
+    const n=points.length,caps=new Array(n).fill(Infinity),d=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+    for(let i=0;i<n;i++){
+      const a=points[Math.max(0,i-stride)],b=points[i],c=points[Math.min(n-1,i+stride)],be=d(a,b),af=d(b,c);
+      if(be<1e-6||af<1e-6)continue;
+      const tu=Math.atan2(c[1]-b[1],c[0]-b[0])-Math.atan2(b[1]-a[1],b[0]-a[0]);
+      const k=Math.abs(Math.atan2(Math.sin(tu),Math.cos(tu)))/((be+af)/2);
+      if(k>1e-6)caps[i]=Math.min(Math.sqrt(lat/k),turn/k);
+    }
+    for(let i=n-2;i>=0;i--)caps[i]=Math.min(caps[i],Math.sqrt(caps[i+1]**2+2*brake*d(points[i],points[i+1])));
+    return caps;
+  }
+  const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+  /* tools/navigation_gateway.py dock_command, drive phase: polar unicycle pose controller */
+  function dockStep(st,goal,ref){
+    const dx=goal.x-st.x,dy=goal.y-st.y,rho=Math.hypot(dx,dy);
+    let alpha=wrap(Math.atan2(dy,dx)-st.th);
+    if(ref.dir==null)ref.dir=Math.abs(alpha)>Math.PI/2?-1:1;
+    if(ref.dir<0)alpha=wrap(alpha+Math.PI);
+    const beta=wrap(goal.th-st.th-alpha);
+    return {v:ref.dir*Math.max(.08,Math.min(.3,.5*rho)),w:Math.max(-.8,Math.min(.8,3*alpha-1*beta)),rho};
+  }
+  return {RES,X0,Y0,NX,NY,ROWS,PLANT_X,PLANT_R,WALL_X,WALL_Y,R_PLAN,R_BODY,clearance,dist,priceAt,costGrid,astar,smooth,length,speedProfile,wrap,dockStep};
+})();
+
+/* ---------- Helpers ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const themeHooks=[];
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>themeHooks.forEach(f=>f()));
+new MutationObserver(()=>themeHooks.forEach(f=>f())).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+function rgba(hex,a){const h=hex.replace("#","");const n=parseInt(h.length===3?h.split("").map(c=>c+c).join(""):h,16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+function fit(cv){const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w,h}}
+function view(w,h,b){const s=Math.min(w/(b.x1-b.x0),h/(b.y1-b.y0));const ox=(w-(b.x1-b.x0)*s)/2,oy=(h-(b.y1-b.y0)*s)/2;return {s,X:x=>ox+(x-b.x0)*s,Y:y=>oy+(b.y1-y)*s,inv:(px,py)=>[b.x0+(px-ox)/s,b.y1-(py-oy)/s]}}
+function drawWorld(ctx,v,opt={}){
+  ctx.strokeStyle=tok("--ink");ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(v.X(-NAV.WALL_X),v.Y(1.4));ctx.lineTo(v.X(-NAV.WALL_X),v.Y(NAV.WALL_Y));ctx.lineTo(v.X(NAV.WALL_X),v.Y(NAV.WALL_Y));ctx.lineTo(v.X(NAV.WALL_X),v.Y(1.4));
+  ctx.moveTo(v.X(-NAV.WALL_X),v.Y(-1.4));ctx.lineTo(v.X(-NAV.WALL_X),v.Y(-NAV.WALL_Y));ctx.lineTo(v.X(NAV.WALL_X),v.Y(-NAV.WALL_Y));ctx.lineTo(v.X(NAV.WALL_X),v.Y(-1.4));
+  ctx.stroke();
+  ctx.fillStyle=tok("--plant-soft");ctx.strokeStyle=tok("--plant");ctx.lineWidth=1;
+  for(const ry of NAV.ROWS)for(const px of NAV.PLANT_X){ctx.beginPath();ctx.arc(v.X(px),v.Y(ry),NAV.PLANT_R*v.s,0,7);ctx.fill();ctx.stroke()}
+}
+function drawRobot(ctx,v,x,y,th,alpha=1){
+  ctx.save();ctx.globalAlpha=alpha;ctx.translate(v.X(x),v.Y(y));ctx.rotate(-th);
+  const L=.558*v.s,W=.48*v.s,ink=tok("--ink");
+  ctx.fillStyle=ink;
+  for(const sx of [-1,1])for(const sy of [-1,1])ctx.fillRect(sx*L*.3-L*.13,sy*W*.5-(sy>0?W*.14:0),L*.26,W*.14);
+  ctx.fillStyle=tok("--surface");ctx.strokeStyle=ink;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.rect(-L/2,-W/2+W*.12,L,W*.76);ctx.fill();ctx.stroke();
+  ctx.fillStyle=tok("--amber");ctx.beginPath();ctx.moveTo(L*.42,0);ctx.lineTo(L*.12,-W*.2);ctx.lineTo(L*.12,W*.2);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+function drawArrowHead(ctx,x,y,ang,size){ctx.beginPath();ctx.moveTo(x+Math.cos(ang)*size,y-Math.sin(ang)*size);ctx.lineTo(x+Math.cos(ang+2.5)*size*.8,y-Math.sin(ang+2.5)*size*.8);ctx.lineTo(x+Math.cos(ang-2.5)*size*.8,y-Math.sin(ang-2.5)*size*.8);ctx.closePath();ctx.fill()}
+
+/* ---------- Figure: greenhouse overview (SVG, 50 px per metre) ---------- */
+(function(){
+  const svg=document.getElementById("overview"),S=50,X=x=>20+(x+9)*S,Y=y=>30+(5-y)*S;
+  el("defs",{},svg).innerHTML='<marker id="ovA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--ink)"/></marker>';
+  el("rect",{x:X(-9),y:Y(5),width:18*S,height:10*S,class:"s-floor"},svg);
+  for(const ry of NAV.ROWS)for(const px of NAV.PLANT_X)el("circle",{cx:X(px),cy:Y(ry),r:NAV.PLANT_R*S,class:"s-plant"},svg);
+  el("path",{d:`M${X(-9)} ${Y(1.4)} V${Y(5)} H${X(9)} V${Y(1.4)} M${X(-9)} ${Y(-1.4)} V${Y(-5)} H${X(9)} V${Y(-1.4)}`,class:"s-wall"},svg);
+  el("text",{x:X(-9)+6,y:Y(0)+4,class:"s-tm"},svg,"door");
+  el("text",{x:X(9)-34,y:Y(0)+4,class:"s-tm"},svg,"door");
+  ["row 4","row 3","row 2","row 1"].forEach((t,i)=>el("text",{x:X(-6)-46,y:Y(NAV.ROWS[3-i])+4,class:"s-tm"},svg,t));
+  el("text",{x:X(-1.2),y:Y(2)+4,class:"s-ts"},svg,"aisle, 1.3 m clear");
+  el("text",{x:X(-1.4),y:Y(-4.15)+4,class:"s-ts"},svg,"outer aisle, 1.6 m clear");
+  el("text",{x:X(-1.4),y:Y(4.15)+4,class:"s-ts"},svg,"outer aisle, 1.6 m clear");
+  el("text",{x:X(7.0),y:Y(3.4),class:"s-ts"},svg,"headland");
+  el("text",{x:X(-8.6),y:Y(3.4),class:"s-ts"},svg,"headland");
+  /* robot at start (-7.5, 0), drawn to scale */
+  const g=el("g",{transform:`translate(${X(-7.5)} ${Y(0)})`},svg);
+  el("rect",{x:-.279*S,y:-.24*S,width:.558*S,height:.48*S,rx:3,class:"s-robot"},g);
+  el("path",{d:`M${.22*S} 0 L${.05*S} ${-.1*S} L${.05*S} ${.1*S}z`,fill:"var(--amber)"},g);
+  el("text",{x:X(-7.5)-20,y:Y(0)+30,class:"s-tm"},svg,"start");
+  /* axes */
+  const ax=X(-8.6),ay=Y(-4.55);
+  el("line",{x1:ax,y1:ay,x2:ax+70,y2:ay,class:"s-ar","marker-end":"url(#ovA)"},svg);
+  el("line",{x1:ax,y1:ay,x2:ax,y2:ay-60,class:"s-ar","marker-end":"url(#ovA)"},svg);
+  el("text",{x:ax+76,y:ay+4,class:"s-h"},svg,"+X");
+  el("text",{x:ax+8,y:ay-52,class:"s-h"},svg,"+Y");
+  el("path",{d:`M${ax+40} ${ay} A40 40 0 0 0 ${ax+28.3} ${ay-28.3}`,class:"s-dim","marker-end":"url(#ovA)"},svg);
+  el("text",{x:ax+44,y:ay-26,class:"s-tm"},svg,"+yaw");
+  /* scale bar */
+  el("line",{x1:X(6),y1:Y(-5)+20,x2:X(8),y2:Y(-5)+20,class:"s-ar"},svg);
+  for(const x of [6,8])el("line",{x1:X(x),y1:Y(-5)+15,x2:X(x),y2:Y(-5)+25,class:"s-ar"},svg);
+  el("text",{x:X(6.75),y:Y(-5)+14,class:"s-tm"},svg,"2 m");
+  el("text",{x:X(-9),y:Y(-5)+22,class:"s-tm"},svg,"18 m × 10 m, 68 plants");
+})();
+
+/* ---------- Figure: grow the obstacles (to scale, 1 m = 150 px) ---------- */
+(function(){
+  const g=document.getElementById("growFig"),S=150,cy=150,top=cy-S,bot=cy+S;
+  const clip=el("clipPath",{id:"growClip"},g);el("rect",{x:0,y:34,width:900,height:234},clip);
+  const area=el("g",{"clip-path":"url(#growClip)"},g);
+  function panel(ox,grown){
+    const t=el("g",{},area);
+    for(const yy of [top,bot])for(const dx of [-.75,0,.75]){
+      if(grown)el("circle",{cx:ox+190+dx*S,cy:yy,r:(.35+.396)*S,class:"s-grow"},t);
+      el("circle",{cx:ox+190+dx*S,cy:yy,r:.35*S,class:"s-plant"},t);
+    }
+    const rx=ox+190+.375*S;
+    if(grown){
+      const yA=top+(.35+.396)*S,yB=bot-(.35+.396)*S;
+      el("rect",{x:ox+20,y:yA,width:360,height:yB-yA,fill:"var(--leaf)",opacity:.14},t);
+      el("circle",{cx:rx,cy:cy,r:4.5,class:"s-dot"},t);
+      el("text",{x:rx+10,y:cy-6,class:"s-tm"},t,"robot centre");
+      el("line",{x1:ox+30,y1:yA,x2:ox+30,y2:yB,class:"s-dim"},t);
+      el("text",{x:ox+36,y:cy+18,class:"s-tm"},t,"0.47 m");
+    }else{
+      el("circle",{cx:rx,cy:cy,r:.396*S,class:"s-robot",style:"fill-opacity:.75"},t);
+      el("circle",{cx:rx,cy:cy,r:3,class:"s-dot"},t);
+      el("line",{x1:rx,y1:cy,x2:rx+.396*S,y2:cy,class:"s-dim"},t);
+      el("text",{x:rx+8,y:cy-6,class:"s-tm"},t,"0.396 m");
+    }
+  }
+  panel(20,false);panel(480,true);
+  el("text",{x:20,y:22,class:"s-lead"},g,"REAL PLANTS, ROBOT AS A CIRCLE");
+  el("text",{x:480,y:22,class:"s-lead"},g,"GROWN PLANTS, ROBOT AS A POINT");
+  el("line",{x1:450,y1:40,x2:450,y2:270,class:"s-grid"},g);
+  el("text",{x:20,y:292,class:"s-tm"},g,"plant rows 2 m apart, plants 0.75 m apart, plant radius 0.35 m");
+})();
+
+/* ---------- Figure: cost across the greenhouse at x = 0 ---------- */
+(function(){
+  const g=document.getElementById("xsec"),L=56,R=884,T=24,B=246,Yp=y=>L+(y+5)/10*(R-L),C=c=>B-c/253*(B-T);
+  const solid=[[-5.2,-4.96],[-3.35,-2.65],[-1.35,-.65],[.65,1.35],[2.65,3.35],[4.96,5.2]];
+  for(const [a,b] of solid){const x0=Yp(Math.max(a,-5)),x1=Yp(Math.min(b,5));el("rect",{x:x0,y:T,width:x1-x0,height:B-T,class:"s-plant",opacity:.6},g)}
+  for(const c of [0,99,252]){el("line",{x1:L,x2:R,y1:C(c),y2:C(c),class:"s-grid"},g);el("text",{x:L-8,y:C(c)+4,class:"s-tm","text-anchor":"end"},g,String(c))}
+  const inside=y=>solid.some(([a,b])=>y>a&&y<b);
+  function curve(infl,cls){
+    let d="",pen=false;
+    for(let y=-5;y<=5.0001;y+=.01){
+      if(inside(y)){pen=false;continue}
+      const c=Math.min(253,NAV.priceAt(NAV.clearance(0,y),infl));
+      d+=(pen?"L":"M")+Yp(y).toFixed(1)+" "+C(c).toFixed(1);pen=true;
+    }
+    el("path",{d,class:cls},g);
+  }
+  curve(.7,"s-old");curve(.6,"s-new");
+  for(const y of [-4,-2,0,2,4])el("text",{x:Yp(y),y:B+18,class:"s-tm","text-anchor":"middle"},g,"y = "+(y<0?"−":"")+Math.abs(y));
+  el("text",{x:Yp(0),y:C(99)-8,class:"s-tm","text-anchor":"middle",style:"fill:var(--amber)"},g,"99");
+  el("text",{x:Yp(-4.15),y:B+36,class:"s-ts","text-anchor":"middle"},g,"outer aisle");
+  el("text",{x:Yp(0),y:B+36,class:"s-ts","text-anchor":"middle"},g,"centre aisle");
+  el("text",{x:Yp(-2),y:B+36,class:"s-ts","text-anchor":"middle"},g,"inner aisle");
+  el("text",{x:L,y:T-8,class:"s-tm"},g,"price");
+  el("line",{x1:L,x2:R,y1:B,y2:B,class:"s-ar"},g);
+  el("line",{x1:R-200,x2:R-176,y1:T-12,y2:T-12,class:"s-old"},g);el("text",{x:R-170,y:T-8,class:"s-tm"},g,"0.7 m (old)");
+  el("line",{x1:R-90,x2:R-66,y1:T-12,y2:T-12,class:"s-new"},g);el("text",{x:R-60,y:T-8,class:"s-tm"},g,"0.6 m");
+})();
+
+/* ---------- Figure: turn response with and without the gateway ---------- */
+(function(){
+  const g=document.getElementById("turnChart"),L=60,R=880,T=20,B=270,tx=t=>L+t/3*(R-L),wy=w=>B-w/1.2*(B-T);
+  const GAIN=.28,DEAD=.15,TAU=.35,dt=.005,want=1;
+  function run(useGateway){
+    let w=0;const hist=[],out=[];
+    for(let t=0;t<=3.0001;t+=dt){
+      const u=useGateway?clamp((want+.8*(want-w))/GAIN,-4,4):want;
+      hist.push(u);
+      const lagged=hist[Math.max(0,hist.length-1-Math.round(DEAD/dt))];
+      w+=(GAIN*lagged-w)*dt/TAU;out.push([t,w]);
+    }
+    return out;
+  }
+  for(const v of [0,.28,.5,1]){el("line",{x1:L,x2:R,y1:wy(v),y2:wy(v),class:"s-grid"},g);el("text",{x:L-8,y:wy(v)+4,class:"s-tm","text-anchor":"end"},g,v.toFixed(2))}
+  for(const t of [0,1,2,3])el("text",{x:tx(t),y:B+18,class:"s-tm","text-anchor":"middle"},g,t+" s");
+  el("line",{x1:L,x2:R,y1:B,y2:B,class:"s-ar"},g);
+  el("line",{x1:tx(0),x2:tx(3),y1:wy(1),y2:wy(1),class:"s-want"},g);
+  const path=(pts,cls)=>el("path",{d:pts.map((p,i)=>(i?"L":"M")+tx(p[0]).toFixed(1)+" "+wy(p[1]).toFixed(1)).join(""),class:cls},g);
+  path(run(false),"s-old");path(run(true),"s-new");
+  el("text",{x:tx(2.2),y:wy(1)-8,class:"s-tm"},g,"wanted: 1.0 rad/s");
+  el("text",{x:tx(1.7),y:wy(.28)-10,class:"s-tm",style:"fill:var(--amber)"},g,"command sent as is");
+  el("text",{x:tx(.62),y:wy(.82),class:"s-tm",style:"fill:var(--leaf)"},g,"command adapted by the gateway");
+  el("text",{x:L,y:T-6,class:"s-tm"},g,"actual turn rate (rad/s)");
+})();
+
+/* ---------- Demo: planner playground ---------- */
+(function(){
+  const cv=document.getElementById("pgCanvas"),B={x0:-9.4,x1:9.4,y0:-5.4,y1:5.4};
+  const $=id=>document.getElementById(id);
+  const st={robot:{x:-7.5,y:0,th:0},goal:{x:6.5,y:0,th:0},infl:.6,drive:2,plan:null,frames:null,fi:0,playing:false,reveal:1,error:""};
+  const costs={},layers={};
+  const cost=infl=>costs[infl]||(costs[infl]=NAV.costGrid(infl));
+  function costLayer(infl){
+    if(layers[infl])return layers[infl];
+    const c=cost(infl),off=document.createElement("canvas");off.width=NAV.NX;off.height=NAV.NY;
+    const x=off.getContext("2d"),img=x.createImageData(NAV.NX,NAV.NY);
+    const hex=h=>{const n=parseInt(h.replace("#",""),16);return [n>>16&255,n>>8&255,n&255]};
+    const leaf=hex(tok("--leaf")),rule=hex(tok("--rule"));
+    for(let j=0;j<NAV.NY;j++)for(let i=0;i<NAV.NX;i++){
+      const n=j*NAV.NX+i,o=((NAV.NY-1-j)*NAV.NX+i)*4,v=c[n];
+      if(v>=253){img.data.set(rule,o);img.data[o+3]=NAV.dist[n]<0?0:200}
+      else if(v>0){img.data.set(leaf,o);img.data[o+3]=Math.round(25+v/252*120)}
+    }
+    x.putImageData(img,0,0);return layers[infl]=off;
+  }
+  let probe=null;
+  function probeLayer(){
+    if(!st.plan)return null;
+    const off=probe||(probe=document.createElement("canvas"));off.width=NAV.NX;off.height=NAV.NY;
+    const x=off.getContext("2d"),img=x.createImageData(NAV.NX,NAV.NY),n=Math.floor(st.plan.order.length*st.reveal);
+    const h=parseInt(tok("--probe").replace("#",""),16),rgb=[h>>16&255,h>>8&255,h&255];
+    for(let k=0;k<n;k++){const c=st.plan.order[k],i=c%NAV.NX,j=(c/NAV.NX)|0,o=((NAV.NY-1-j)*NAV.NX+i)*4;img.data.set(rgb,o);img.data[o+3]=105}
+    x.putImageData(img,0,0);return off;
+  }
+  function plan(){
+    st.error="";st.frames=null;st.fi=0;st.playing=false;
+    const c=cost(st.infl);
+    if(NAV.clearance(st.goal.x,st.goal.y)<NAV.R_PLAN){st.plan=null;st.error="That spot is too close to a plant or wall for the robot's body. Pick a point nearer the middle of an aisle or headland.";return update()}
+    const r=NAV.astar(c,st.robot.x,st.robot.y,st.goal.x,st.goal.y);
+    if(!r){st.plan=null;st.error="No route found from here.";return update()}
+    const path=NAV.smooth(r.pts,c);
+    st.plan={path,order:r.order,len:NAV.length(path)};
+    st.frames=simulate(path);
+    if(reduceMotion){st.reveal=1;update()}else{st.reveal=0;const t0=performance.now(),p0=st.plan;const step=now=>{if(st.plan!==p0||st.reveal>=1)return;st.reveal=Math.min(1,(now-t0)/700);update();if(st.reveal<1)requestAnimationFrame(step)};requestAnimationFrame(step);setTimeout(()=>{if(st.plan===p0&&st.reveal<1){st.reveal=1;update()}},900)}
+  }
+  function simulate(path){
+    const dt=.02,goal=st.goal,turnAct=Math.min(4*.28,1.2),drive=st.drive,frames=[];
+    const s=[0];for(let i=1;i<path.length;i++)s.push(s[i-1]+Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1]));
+    const caps=NAV.speedProfile(path),total=s[s.length-1];
+    let stopShort=0;
+    if(path.length>10){const a=path[path.length-10],b=path[path.length-1];if(Math.abs(NAV.wrap(goal.th-Math.atan2(b[1]-a[1],b[0]-a[0])))>.5)stopShort=.7}
+    const r={x:st.robot.x,y:st.robot.y,th:st.robot.th,v:0,w:0};
+    let phase="follow",near=0,ref={dir:null},t=0,label="";
+    for(let k=0;k<9000;k++,t+=dt){
+      let vc=0,wc=0,carrot=null,L=null;
+      const eyaw=NAV.wrap(r.th-goal.th),rho=Math.hypot(goal.x-r.x,goal.y-r.y);
+      if(phase==="follow"){
+        const d=i=>Math.hypot(path[i][0]-r.x,path[i][1]-r.y);
+        for(let i=near;i<Math.min(path.length,near+60);i++)if(d(i)<d(near))near=i;
+        const remaining=total-s[near];
+        if(rho<=.075||remaining<.06||(remaining<=.7&&Math.abs(eyaw)>.5)){phase="turn"}
+        else{
+          L=clamp(1.5*Math.abs(r.v),1,3);
+          let c=near;while(c<path.length-1&&d(c)<L)c++;
+          carrot=path[c];
+          const dx=carrot[0]-r.x,dy=carrot[1]-r.y,dd=Math.hypot(dx,dy),a=NAV.wrap(Math.atan2(dy,dx)-r.th);
+          if(Math.abs(a)>.5){wc=Math.sign(a)*turnAct;label="Turning toward the route"}
+          else{
+            const kappa=2*Math.sin(a)/Math.max(dd,1e-3);let v=drive;
+            const rad=Math.abs(kappa)>1e-6?1/Math.abs(kappa):Infinity;
+            if(rad<2)v=Math.max(v*rad/2,.25);
+            if(remaining<1.5)v=Math.max(v*remaining/1.5,.1);
+            let end=near;while(end<path.length-1&&s[end]-s[near]<L)end++;
+            let cap=Infinity;for(let i=near;i<=end;i++)cap=Math.min(cap,caps[i]);
+            const lim=Math.max(Math.min(cap,Math.sqrt(2*1.2*Math.max(remaining-stopShort,0))),.15);
+            vc=Math.min(v,lim,Math.max(r.v,0)+.5);wc=kappa*vc;label="Following the route";
+          }
+        }
+      }
+      if(phase==="turn"){
+        if(Math.abs(eyaw)>.15){wc=-Math.sign(eyaw)*Math.min(turnAct,Math.sqrt(2*Math.abs(eyaw)));label="Turning to the goal heading"}
+        else{phase="drive";ref={dir:null}}
+      }
+      if(phase==="drive"){
+        if(rho<=.075){
+          if(Math.abs(eyaw)<=.07){if(Math.abs(r.v)<.02&&Math.abs(r.w)<.03)phase="done";else label="Settling"}
+          else{wc=-Math.sign(eyaw)*Math.min(.8,Math.sqrt(2*Math.abs(eyaw)));label="Final small turn"}
+        }else{const c=NAV.dockStep(r,goal,ref);vc=c.v;wc=c.w;label=ref.dir<0?"Reversing onto the spot":"Driving onto the spot"}
+      }
+      r.v+=clamp(vc-r.v,-2*dt,2*dt);r.w+=clamp(wc-r.w,-4*dt,4*dt);
+      r.th=NAV.wrap(r.th+r.w*dt);r.x+=r.v*Math.cos(r.th)*dt;r.y+=r.v*Math.sin(r.th)*dt;
+      if(phase==="done"){frames.push({x:r.x,y:r.y,th:r.th,v:0,t,label:"Arrived",done:true});break}
+      if(k%2===0)frames.push({x:r.x,y:r.y,th:r.th,v:r.v,t,label,carrot,L});
+    }
+    return frames;
+  }
+  function draw(){
+    const {ctx,w,h}=fit(cv),v=view(w,h,B);
+    ctx.clearRect(0,0,w,h);
+    ctx.imageSmoothingEnabled=false;
+    const gx=v.X(NAV.X0),gy=v.Y(NAV.Y0+NAV.NY*NAV.RES),gw=NAV.NX*NAV.RES*v.s,gh=NAV.NY*NAV.RES*v.s;
+    ctx.drawImage(costLayer(st.infl),gx,gy,gw,gh);
+    const p=probeLayer();if(p)ctx.drawImage(p,gx,gy,gw,gh);
+    drawWorld(ctx,v);
+    const ink=tok("--ink"),leaf=tok("--leaf"),amber=tok("--amber");
+    if(st.plan&&st.reveal>=1){
+      ctx.strokeStyle=ink;ctx.lineWidth=2.5;ctx.lineJoin="round";ctx.beginPath();
+      st.plan.path.forEach((q,i)=>i?ctx.lineTo(v.X(q[0]),v.Y(q[1])):ctx.moveTo(v.X(q[0]),v.Y(q[1])));ctx.stroke();
+    }
+    let pose=st.robot,f=null;
+    if(st.frames&&st.fi>0){
+      f=st.frames[Math.min(st.fi,st.frames.length-1)];pose=f;
+      ctx.strokeStyle=amber;ctx.lineWidth=2;ctx.beginPath();
+      for(let i=0;i<=Math.min(st.fi,st.frames.length-1);i++){const q=st.frames[i];i?ctx.lineTo(v.X(q.x),v.Y(q.y)):ctx.moveTo(v.X(q.x),v.Y(q.y))}
+      ctx.stroke();
+      if(f.carrot&&!f.done){
+        ctx.strokeStyle=leaf;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(v.X(f.x),v.Y(f.y),f.L*v.s,0,7);ctx.stroke();ctx.setLineDash([]);
+        ctx.beginPath();ctx.moveTo(v.X(f.x),v.Y(f.y));ctx.lineTo(v.X(f.carrot[0]),v.Y(f.carrot[1]));ctx.stroke();
+        ctx.fillStyle=leaf;ctx.beginPath();ctx.arc(v.X(f.carrot[0]),v.Y(f.carrot[1]),5,0,7);ctx.fill();
+      }
+    }
+    /* goal marker */
+    const G=st.goal;ctx.strokeStyle=st.error?amber:leaf;ctx.fillStyle=st.error?amber:leaf;ctx.lineWidth=2;
+    ctx.save();ctx.translate(v.X(G.x),v.Y(G.y));ctx.rotate(-G.th);ctx.setLineDash([4,3]);ctx.strokeRect(-.279*v.s,-.24*v.s,.558*v.s,.48*v.s);ctx.setLineDash([]);ctx.restore();
+    const ax=v.X(G.x),ay=v.Y(G.y),len=.55*v.s;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax+Math.cos(G.th)*len,ay-Math.sin(G.th)*len);ctx.stroke();drawArrowHead(ctx,ax+Math.cos(G.th)*len,ay-Math.sin(G.th)*len,G.th,7);
+    drawRobot(ctx,v,pose.x,pose.y,pose.th);
+    /* axes hint */
+    ctx.fillStyle=tok("--muted");ctx.font=`11px ${tok("--f-mono")}`;
+    ctx.fillText("+X →",v.X(-9.2),v.Y(-5.25));ctx.fillText(`goal (${G.x.toFixed(1)}, ${G.y.toFixed(1)}, ${Math.round(G.th*180/Math.PI)}°)`,v.X(3.6),v.Y(-5.25));
+  }
+  function update(){
+    draw();
+    const f=st.frames&&st.fi>0?st.frames[Math.min(st.fi,st.frames.length-1)]:null;
+    $("pgLen").textContent=st.plan?st.plan.len.toFixed(1)+" m":"–";
+    $("pgExp").textContent=st.plan?Math.floor(st.plan.order.length*st.reveal).toLocaleString("en-GB"):"–";
+    $("pgPhase").textContent=st.error?"No route":f?f.label:st.plan?"Route planned":"–";
+    $("pgSpeed").textContent=(f?Math.abs(f.v):0).toFixed(2)+" m/s";
+    $("pgTime").textContent=(f?f.t:0).toFixed(1)+" s";
+    const s=$("pgStatus");s.className="status"+(st.error?" bad":"");
+    if(st.error)s.textContent=st.error;
+    else if(st.plan&&st.infl===.7&&st.plan.len>NAV.length([[st.robot.x,st.robot.y],[st.goal.x,st.goal.y]])*1.3)s.textContent="With the old 0.7 m setting the inner aisles look expensive, so the planner takes a long way round. Switch back to 0.6 m to compare.";
+    else if(f&&f.done)s.textContent=`Arrived ${(Math.hypot(f.x-st.goal.x,f.y-st.goal.y)*100).toFixed(1)} cm and ${Math.abs(NAV.wrap(f.th-st.goal.th)*180/Math.PI).toFixed(1)}° from the goal after ${f.t.toFixed(1)} simulated seconds.`;
+    else if(st.plan)s.textContent="Shaded squares show how far the search had to look before it found the cheapest route.";
+    else s.textContent="";
+  }
+  function play(){
+    if(!st.frames||st.playing)return;
+    if(st.fi>=st.frames.length-1){const last=st.frames[st.frames.length-1];st.robot={x:last.x,y:last.y,th:last.th};plan();return}
+    st.playing=true;st.reveal=1;
+    if(reduceMotion){st.fi=st.frames.length-1;st.playing=false;return update()}
+    let last=performance.now();
+    const step=now=>{if(!st.playing)return;const adv=(now-last)/1000*2/.04;last=now;st.fi=Math.min(st.frames.length-1,st.fi+Math.max(1,Math.round(adv)));update();if(st.fi<st.frames.length-1)requestAnimationFrame(step);else{st.playing=false}};
+    requestAnimationFrame(step);
+  }
+  function commitRobot(){if(st.frames&&st.fi>0){const f=st.frames[Math.min(st.fi,st.frames.length-1)];st.robot={x:f.x,y:f.y,th:f.th}}st.playing=false}
+  function setHeading(deg){st.goal.th=deg*Math.PI/180;document.querySelectorAll("#pgHeading button").forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.v)===deg)))}
+  cv.addEventListener("click",e=>{const r=cv.getBoundingClientRect(),v=view(r.width,r.height,B),[x,y]=v.inv(e.clientX-r.left,e.clientY-r.top);if(Math.abs(x)>9||Math.abs(y)>5)return;commitRobot();st.goal.x=Math.round(x*10)/10;st.goal.y=Math.round(y*10)/10;plan()});
+  document.querySelectorAll("#pgHeading button").forEach(b=>b.addEventListener("click",()=>{commitRobot();setHeading(Number(b.dataset.v));plan()}));
+  document.querySelectorAll("#pgInfl button").forEach(b=>b.addEventListener("click",()=>{commitRobot();st.infl=Number(b.dataset.v);document.querySelectorAll("#pgInfl button").forEach(c=>c.setAttribute("aria-pressed",String(c===b)));plan()}));
+  document.querySelectorAll("#play .chip").forEach(b=>b.addEventListener("click",()=>{commitRobot();const [x,y,d]=b.dataset.g.split(",").map(Number);st.goal.x=x;st.goal.y=y;setHeading(d);plan()}));
+  $("pgDrive").addEventListener("input",e=>{commitRobot();st.drive=Number(e.target.value);$("pgDriveV").textContent=st.drive.toFixed(1)+" m/s";if(st.plan)st.frames=simulate(st.plan.path),st.fi=0;update()});
+  $("pgGo").addEventListener("click",play);
+  $("pgReset").addEventListener("click",()=>{st.playing=false;st.robot={x:-7.5,y:0,th:0};plan()});
+  themeHooks.push(()=>{for(const k in layers)delete layers[k];update()});
+  new ResizeObserver(()=>update()).observe(cv);
+  st.reveal=1;
+  const c=cost(st.infl),r=NAV.astar(c,-7.5,0,6.5,0),path=NAV.smooth(r.pts,c);st.plan={path,order:r.order,len:NAV.length(path)};st.frames=simulate(path);
+  update();
+})();
+
+/* ---------- Demo: pure pursuit lookahead ---------- */
+(function(){
+  const cv=document.getElementById("ppCanvas"),B={x0:.4,x1:8.0,y0:-1.4,y1:3.2},$=id=>document.getElementById(id);
+  const path=[];
+  for(let x=1;x<6;x+=.05)path.push([x,0]);
+  for(let a=-Math.PI/2;a<Math.PI/2;a+=.05)path.push([6+Math.cos(a),1+Math.sin(a)]);
+  for(let x=6;x>=1;x-=.05)path.push([x,2]);
+  const st={L:1,frames:[],fi:0,playing:false,metrics:null};
+  function simulate(){
+    const dt=.02,tau=.4,v0=1,r={x:1,y:-.2,th:0,w:0,v:0},frames=[];let near=0,gap=9,over=0,crossed=false;
+    for(let t=0;t<40;t+=dt){
+      const d=i=>Math.hypot(path[i][0]-r.x,path[i][1]-r.y);
+      for(let k=near;k<Math.min(path.length,near+40);k++)if(d(k)<d(near))near=k;
+      let c=near;while(c<path.length-1&&d(c)<st.L)c++;
+      const [cx,cy]=path[c],a=NAV.wrap(Math.atan2(cy-r.y,cx-r.x)-r.th);
+      let vc,wc;
+      if(Math.abs(a)>.5){vc=0;wc=Math.sign(a)*1}else{vc=v0;wc=vc*2*Math.sin(a)/Math.max(Math.hypot(cx-r.x,cy-r.y),1e-3)}
+      r.v+=clamp(vc-r.v,-2*dt,2*dt);r.w+=(wc-r.w)*dt/tau;
+      r.th+=r.w*dt;r.x+=r.v*Math.cos(r.th)*dt;r.y+=r.v*Math.sin(r.th)*dt;
+      const cl=NAV.clearance(r.x,r.y)-NAV.R_BODY;
+      if(r.x>4)gap=Math.min(gap,cl);
+      if(r.x<5.5&&r.y<1){if(r.y>-.01)crossed=true;if(crossed)over=Math.max(over,Math.abs(r.y))}
+      frames.push({x:r.x,y:r.y,th:r.th,cx,cy,hit:cl<0});
+      if(c===path.length-1&&Math.hypot(cx-r.x,cy-r.y)<.1)break;
+    }
+    st.frames=frames;st.metrics={gap,over};
+  }
+  function draw(){
+    const {ctx,w,h}=fit(cv),v=view(w,h,B);ctx.clearRect(0,0,w,h);
+    drawWorld(ctx,v);
+    ctx.strokeStyle=tok("--muted");ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();path.forEach((q,i)=>i?ctx.lineTo(v.X(q[0]),v.Y(q[1])):ctx.moveTo(v.X(q[0]),v.Y(q[1])));ctx.stroke();ctx.setLineDash([]);
+    const n=st.playing?st.fi:st.frames.length-1,leaf=tok("--leaf"),amber=tok("--amber");
+    ctx.lineWidth=3;ctx.lineCap="round";
+    for(let i=1;i<=n;i++){const a=st.frames[i-1],b=st.frames[i];ctx.strokeStyle=b.hit?amber:leaf;ctx.beginPath();ctx.moveTo(v.X(a.x),v.Y(a.y));ctx.lineTo(v.X(b.x),v.Y(b.y));ctx.stroke()}
+    const f=st.frames[st.playing?st.fi:0];
+    if(f){
+      ctx.strokeStyle=leaf;ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(v.X(f.x),v.Y(f.y),st.L*v.s,0,7);ctx.stroke();ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(v.X(f.x),v.Y(f.y));ctx.lineTo(v.X(f.cx),v.Y(f.cy));ctx.stroke();
+      ctx.fillStyle=amber;ctx.beginPath();ctx.arc(v.X(f.cx),v.Y(f.cy),6,0,7);ctx.fill();
+      drawRobot(ctx,v,f.x,f.y,f.th);
+      ctx.fillStyle=tok("--muted");ctx.font=`11px ${tok("--f-mono")}`;ctx.fillText("carrot",v.X(f.cx)+8,v.Y(f.cy)-8);
+    }
+    ctx.fillStyle=tok("--muted");ctx.font=`11px ${tok("--f-mono")}`;ctx.fillText("row end",v.X(5.75),v.Y(1)+4);
+  }
+  function update(){
+    draw();
+    const m=st.metrics,s=$("ppStatus");
+    $("ppOver").textContent=(m.over*100).toFixed(0)+" cm";
+    $("ppGap").textContent=m.gap<0?"hit ("+(m.gap*100).toFixed(0)+" cm)":(m.gap*100).toFixed(0)+" cm";
+    if(m.gap<0){s.className="status bad";s.textContent="Cuts the corner: the robot's body runs into the row-end plant."}
+    else if(m.over>.08){s.className="status bad";s.textContent="Over-steers: it swings past the line before settling."}
+    else{s.className="status good";s.textContent="Follows the bend cleanly."}
+  }
+  function play(){
+    if(st.playing)return;
+    if(reduceMotion){st.playing=false;return update()}
+    st.playing=true;st.fi=0;let last=performance.now();
+    const step=now=>{if(!st.playing)return;st.fi=Math.min(st.frames.length-1,st.fi+Math.max(1,Math.round((now-last)/20)));last=now;update();if(st.fi<st.frames.length-1)requestAnimationFrame(step);else{st.playing=false;update()}};
+    requestAnimationFrame(step);
+  }
+  $("ppL").addEventListener("input",e=>{st.L=Number(e.target.value);$("ppLV").textContent=st.L.toFixed(2)+" m";st.playing=false;simulate();update()});
+  $("ppPlay").addEventListener("click",play);
+  themeHooks.push(update);new ResizeObserver(update).observe(cv);
+  simulate();update();
+})();
+
+/* ---------- Demo: parking controller ---------- */
+(function(){
+  const cv=document.getElementById("dkCanvas"),B={x0:-1.6,x1:1.6,y0:-.75,y1:.75},$=id=>document.getElementById(id);
+  const goal={x:0,y:0,th:0},st={start:{x:.65,y:-.07},frames:[],fi:0,playing:false,info:null};
+  function simulate(){
+    const dt=.02,r={x:st.start.x,y:st.start.y,th:0,v:0,w:0},ref={dir:null},frames=[];let t=0,phase="drive",turnDeg=null;
+    for(;t<40;t+=dt){
+      let vc=0,wc=0;const eyaw=NAV.wrap(r.th-goal.th),rho=Math.hypot(goal.x-r.x,goal.y-r.y);
+      if(phase==="drive"){if(rho<=.075){phase="final";turnDeg=Math.abs(eyaw)*180/Math.PI}else{const c=NAV.dockStep(r,goal,ref);vc=c.v;wc=c.w}}
+      if(phase==="final"){if(Math.abs(eyaw)>.07)wc=-Math.sign(eyaw)*Math.min(.8,Math.sqrt(2*Math.abs(eyaw)));else if(Math.abs(r.v)<.02&&Math.abs(r.w)<.03)break}
+      r.v+=clamp(vc-r.v,-2*dt,2*dt);r.w+=clamp(wc-r.w,-4*dt,4*dt);r.th=NAV.wrap(r.th+r.w*dt);r.x+=r.v*Math.cos(r.th)*dt;r.y+=r.v*Math.sin(r.th)*dt;
+      frames.push({x:r.x,y:r.y,th:r.th});
+    }
+    st.frames=frames;st.info={dir:ref.dir,t,turnDeg:turnDeg||0};
+  }
+  function draw(){
+    const {ctx,w,h}=fit(cv),v=view(w,h,B);ctx.clearRect(0,0,w,h);
+    const ink=tok("--ink"),leaf=tok("--leaf"),muted=tok("--muted");
+    ctx.strokeStyle=tok("--rule");ctx.lineWidth=1;
+    for(let x=-1.5;x<=1.51;x+=.25){ctx.beginPath();ctx.moveTo(v.X(x),v.Y(-.75));ctx.lineTo(v.X(x),v.Y(.75));ctx.stroke()}
+    for(let y=-.75;y<=.76;y+=.25){ctx.beginPath();ctx.moveTo(v.X(-1.6),v.Y(y));ctx.lineTo(v.X(1.6),v.Y(y));ctx.stroke()}
+    ctx.fillStyle=rgba(tok("--leaf"),.12);ctx.fillRect(v.X(-1.6),v.Y(.3),3.2*v.s,.6*v.s);
+    ctx.strokeStyle=leaf;ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.strokeRect(v.X(-.279),v.Y(.24),.558*v.s,.48*v.s);ctx.setLineDash([]);
+    ctx.fillStyle=leaf;ctx.beginPath();ctx.moveTo(v.X(0),v.Y(0));ctx.lineTo(v.X(.45),v.Y(0));ctx.lineWidth=2;ctx.strokeStyle=leaf;ctx.stroke();drawArrowHead(ctx,v.X(.45),v.Y(0),0,8);
+    const n=st.playing?st.fi:st.frames.length-1;
+    ctx.strokeStyle=tok("--amber");ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(v.X(st.start.x),v.Y(st.start.y));for(let i=0;i<=n;i++)ctx.lineTo(v.X(st.frames[i].x),v.Y(st.frames[i].y));ctx.stroke();
+    drawRobot(ctx,v,st.start.x,st.start.y,0,.35);
+    const f=st.playing?st.frames[st.fi]:st.frames[st.frames.length-1];
+    if(f)drawRobot(ctx,v,f.x,f.y,f.th);
+    ctx.fillStyle=muted;ctx.font=`11px ${tok("--f-mono")}`;ctx.fillText("goal",v.X(-.27),v.Y(.24)-6);ctx.fillText("25 cm grid · shaded band: where a turn can leave the robot",v.X(-1.55),v.Y(-.75)-6);
+  }
+  function update(){
+    draw();const i=st.info;
+    $("dkDir").textContent=i.dir<0?"reverses onto the spot":"drives forward onto the spot";
+    $("dkTime").textContent=i.t.toFixed(1)+" s";
+    $("dkTurn").textContent=i.turnDeg.toFixed(0)+"°";
+  }
+  function play(){
+    if(st.playing)return;if(reduceMotion)return update();
+    st.playing=true;st.fi=0;let last=performance.now();
+    const step=now=>{if(!st.playing)return;st.fi=Math.min(st.frames.length-1,st.fi+Math.max(1,Math.round((now-last)/20)));last=now;draw();if(st.fi<st.frames.length-1)requestAnimationFrame(step);else{st.playing=false;update()}};
+    requestAnimationFrame(step);
+  }
+  cv.addEventListener("click",e=>{const r=cv.getBoundingClientRect(),v=view(r.width,r.height,B),[x,y]=v.inv(e.clientX-r.left,e.clientY-r.top);
+    let sx=clamp(x,-1.4,1.4);if(Math.abs(sx)<.12)sx=sx<0?-.12:.12;st.start={x:sx,y:clamp(y,-.3,.3)};st.playing=false;simulate();update();play()});
+  $("dkPlay").addEventListener("click",play);
+  themeHooks.push(update);new ResizeObserver(update).observe(cv);
+  simulate();update();
+})();
+</script>

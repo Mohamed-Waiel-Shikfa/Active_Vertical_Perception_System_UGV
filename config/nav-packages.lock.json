@@ -1,0 +1,22 @@
+{
+  "nav2_release": "1.3.13",
+  "pins": [
+    "ros-jazzy-nav2-behavior-tree=1.3.13-1noble.20260921.024958",
+    "ros-jazzy-nav2-bt-navigator=1.3.13-1noble.20260921.031756",
+    "ros-jazzy-nav2-common=1.3.13-1noble.20260920.234759",
+    "ros-jazzy-nav2-controller=1.3.13-1noble.20260921.031754",
+    "ros-jazzy-nav2-core=1.3.13-1noble.20260921.031435",
+    "ros-jazzy-nav2-costmap-2d=1.3.13-1noble.20260921.024946",
+    "ros-jazzy-nav2-lifecycle-manager=1.3.13-1noble.20260921.025008",
+    "ros-jazzy-nav2-map-server=1.3.13-1noble.20260921.024942",
+    "ros-jazzy-nav2-msgs=1.3.13-1noble.20260921.023049",
+    "ros-jazzy-nav2-planner=1.3.13-1noble.20260921.031801",
+    "ros-jazzy-nav2-regulated-pure-pursuit-controller=1.3.13-1noble.20260921.031808",
+    "ros-jazzy-nav2-route=1.3.13-1noble.20260921.031810",
+    "ros-jazzy-nav2-rviz-plugins=1.3.13-1noble.20260921.032725",
+    "ros-jazzy-nav2-smac-planner=1.3.13-1noble.20260921.031850",
+    "ros-jazzy-nav2-util=1.3.13-1noble.20260921.024419",
+    "ros-jazzy-nav2-voxel-grid=1.3.13-1noble.20260921.023047",
+    "ros-jazzy-behaviortree-cpp=4.10.0-1noble.20260911.134208"
+  ]
+}

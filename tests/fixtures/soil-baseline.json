@@ -1,0 +1,6 @@
+{
+  "ground_height_range": 0.04,
+  "ground_bump_rms": 0.016,
+  "slip_longitudinal": 1.0,
+  "slip_lateral": 1.0
+}

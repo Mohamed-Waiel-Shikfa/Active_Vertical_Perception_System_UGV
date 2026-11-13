@@ -1,0 +1,19 @@
+{
+  "repository": "https://github.com/FieldRobotEvent/virtual_maize_field",
+  "revision": "e525d70c3c73fcdfae9c77bb8e4ca03bf3377ac3",
+  "branch_at_retrieval": "ros2-gz",
+  "source_license": "GPL-3.0",
+  "terrain_method": "Field2DGenerator.generate_ground",
+  "files": {
+    "virtual_maize_field/world_generator/field_2d_generator.py": "3c92414283ecc648c226ca907b53cabfe29d29e98726f92d769274c22743c24e",
+    "models/unknown_weed/meshes/unknown_weed.dae": "499b8c0015500cc240b9ae9c6b981a33652e3a362871256fc87ed95f6745471a",
+    "models/unknown_weed/materials/textures/unknown_weed.png": "1930af3189785e16d8348370ba2b753c562aac24a89078d308b80701d4d401d8"
+  },
+  "plant_asset": {
+    "title": "simple plant (upstream unknown_weed)",
+    "creator": "aaron_nerlich",
+    "source": "https://sketchfab.com/3d-models/simple-plant-8983e5d47f12435bbd1189168b75abeb",
+    "license": "CC-BY-4.0",
+    "changes": "Bake source scene scaling; shorten each connected leaf blade radially to 0.75x and widen it tangentially to 2.2x; resize, rotate and stack four low-rise broad-leaf crowns; add original branching stems, red fruit and green calyces; normalize measured final bounds."
+  }
+}
